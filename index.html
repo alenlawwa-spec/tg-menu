@@ -361,7 +361,6 @@
 
     <!-- ЭКРАН АДМИНКИ -->
     <div id="admin-page" class="page hidden-bottom" style="background: rgba(5,5,8,0.98); z-index: 50;">
-        <!-- Прилипающая шапка терминала -->
         <header class="mb-8 flex justify-between items-center sticky top-0 bg-[#050508] py-4 z-20 border-b border-white/5">
             <div>
                 <h2 class="text-2xl font-bold text-white tracking-tight">Terminal</h2>
@@ -439,7 +438,6 @@
             { id: 'text-white', hex: '#ffffff' }
         ];
 
-        // --- FIREBASE SETUP ---
         const firebaseConfig = {
             apiKey: "AIzaSyCiYBslwEecbyuMyW5J05nvTs_sXLlurR4",
             authDomain: "tg-menu.firebaseapp.com",
@@ -505,6 +503,22 @@
             });
         }
 
+        // --- ЛОГИКА СВАЙПА ---
+        let touchStartX = 0;
+        const subPage = document.getElementById('sub-page');
+
+        subPage.addEventListener('touchstart', e => {
+            touchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+
+        subPage.addEventListener('touchend', e => {
+            const touchEndX = e.changedTouches[0].screenX;
+            // Если свайп вправо (начало слева, движение вправо)
+            if (touchEndX - touchStartX > 50) {
+                hideSubPage();
+            }
+        }, { passive: true });
+
         function openSubPage(btnData) {
             tg.HapticFeedback.impactOccurred('medium');
             document.getElementById('sub-page-title').textContent = btnData.title;
@@ -519,14 +533,18 @@
                 container.appendChild(itemEl);
             });
             document.getElementById('main-page').classList.replace('active', 'hidden-left');
-            document.getElementById('sub-page').classList.replace('hidden-right', 'active');
+            subPage.classList.replace('hidden-right', 'active');
             tg.BackButton.show();
         }
 
-        tg.BackButton.onClick(() => {
-            document.getElementById('sub-page').classList.replace('active', 'hidden-right');
+        function hideSubPage() {
+            subPage.classList.replace('active', 'hidden-right');
             document.getElementById('main-page').classList.replace('hidden-left', 'active');
             tg.BackButton.hide();
+        }
+
+        tg.BackButton.onClick(() => {
+            hideSubPage();
         });
 
         function handleLink(url) {
@@ -540,16 +558,13 @@
         document.getElementById('nav-header').addEventListener('click', () => {
             tapCount++;
             if (tapCount >= 5) {
-                // ПРОВЕРКА USER_ID ТЕЛЕГРАМА
                 const currentUserId = tg.initDataUnsafe?.user?.id;
-                
                 if (currentUserId === ADMIN_ID) {
-                    openAdmin(); // Вход по ID
+                    openAdmin(); 
                 } else {
-                    // ЕСЛИ ID ДРУГОЙ ИЛИ НЕ ОПРЕДЕЛЕН - ПРОСИМ ПАРОЛЬ
                     const pass = prompt('Admin Password:');
                     if (pass === ADMIN_PASSWORD) {
-                        openAdmin(); // Вход по паролю
+                        openAdmin(); 
                     }
                 }
                 tapCount = 0;
@@ -579,19 +594,15 @@
                         <span class="text-[10px] text-cyan-400">BUTTON ${idx+1}</span>
                         <button onclick="removeMainMenuButton(${idx})" class="btn-delete-icon">✕</button>
                     </div>
-                    
                     <label class="admin-label">Icon & Color</label>
                     <div class="icon-grid" id="icon-grid-${idx}"></div>
                     <div class="color-row" id="color-row-${idx}"></div>
-
                     <input type="text" class="admin-input" value="${btn.title}" placeholder="Заголовок" onchange="tempAppData.mainMenu[${idx}].title=this.value">
                     <input type="text" class="admin-input" value="${btn.subtitle}" placeholder="Подзаголовок" onchange="tempAppData.mainMenu[${idx}].subtitle=this.value">
-                    
                     <select class="admin-select" onchange="tempAppData.mainMenu[${idx}].mode=this.value; renderAdminMainMenu();">
                         <option value="link" ${btn.mode==='link'?'selected':''}>Ссылка</option>
                         <option value="list" ${btn.mode==='list'?'selected':''}>Список</option>
                     </select>
-
                     ${btn.mode==='link' 
                         ? `<input type="text" class="admin-input mt-2" value="${btn.directLink||''}" placeholder="URL" onchange="tempAppData.mainMenu[${idx}].directLink=this.value">`
                         : `<button onclick="editSubList(${idx})" class="btn-edit-list">Редактировать список (${btn.items?.length||0})</button>`
