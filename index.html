@@ -14,7 +14,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         :root {
             --neon-color: #00f2ff;
@@ -94,7 +94,9 @@
             100% { opacity: 1; transform: scale(1); }
         }
 
-        @keyframes pulse-gray { 0% { opacity: 0.5; } }
+        @keyframes pulse-gray {
+            0% { opacity: 0.5; }
+        }
 
         .page {
             position: absolute;
@@ -132,22 +134,6 @@
             transform: scale(0.94);
             border-color: rgba(0, 242, 255, 0.5);
             background: rgba(255, 255, 255, 0.08);
-        }
-
-        /* Шапка админки */
-        .admin-header {
-            position: sticky;
-            top: 0;
-            left: 0;
-            right: 0;
-            background: rgba(5, 5, 8, 0.95);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            z-index: 100;
-            padding: 16px 0;
-            margin-top: -24px; /* Компенсация padding страницы */
-            margin-bottom: 24px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         /* Стили админки */
@@ -197,11 +183,13 @@
             border-radius: 10px;
             margin-bottom: 8px;
             font-size: 13px;
+            transition: border-color 0.3s;
         }
 
         .admin-input:focus {
             outline: none;
             border-color: var(--neon-color);
+            background: rgba(0, 242, 255, 0.05);
         }
 
         .admin-label {
@@ -226,7 +214,12 @@
 
         .btn-delete-icon {
             color: rgba(255, 77, 77, 0.6);
+            transition: color 0.3s;
             padding: 4px;
+        }
+
+        .btn-delete-icon:hover {
+            color: #ff4d4d;
         }
 
         .btn-add-cyber {
@@ -242,10 +235,17 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-add-cyber:active {
+            background: rgba(0, 242, 255, 0.15);
+            transform: scale(0.98);
         }
 
         .btn-save-cyber {
             background: linear-gradient(135deg, #0066ff, #00f2ff);
+            box-shadow: 0 4px 15px rgba(0, 242, 255, 0.3);
             color: white;
             font-weight: 700;
             padding: 14px;
@@ -267,6 +267,7 @@
             margin-top: 5px;
         }
 
+        /* Остальные стили */
         .icon-box {
             width: 54px;
             height: 54px;
@@ -275,6 +276,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            box-shadow: 4px 4px 12px rgba(0,0,0,0.3);
             margin-right: 18px;
             flex-shrink: 0;
         }
@@ -317,7 +319,9 @@
             <p id="nav-subheader" class="text-gray-500 text-sm mt-2">Твой проводник по контенту</p>
         </header>
 
-        <div id="main-menu-container" class="grid gap-4"></div>
+        <div id="main-menu-container" class="grid gap-4">
+            <!-- Кнопки рендерятся динамически -->
+        </div>
 
         <footer class="mt-auto pt-16 pb-8 text-center">
             <p class="text-[10px] text-gray-600 opacity-50">Developed by Elena Sotnikova</p>
@@ -336,13 +340,13 @@
 
     <!-- ЭКРАН АДМИНКИ -->
     <div id="admin-page" class="page hidden-bottom" style="background: rgba(5,5,8,0.98); z-index: 50;">
-        <div class="admin-header flex justify-between items-center px-5">
-            <div class="flex flex-col">
-                <h2 class="text-xl font-bold text-white tracking-tighter uppercase leading-none">Terminal</h2>
-                <div class="text-[10px] text-cyan-400 font-mono mt-1 opacity-80">ACCESS_GRANTED // ROOT_UI</div>
+        <header class="mb-8 flex justify-between items-center sticky top-0 bg-[#050508] py-4 z-10">
+            <div>
+                <h2 class="text-2xl font-bold text-white tracking-tight">Terminal</h2>
+                <div class="text-[10px] text-cyan-400 font-mono">ACCESS GRANTED // ADMIN_MODE</div>
             </div>
-            <button onclick="closeAdmin()" class="bg-white/5 w-10 h-10 rounded-full flex items-center justify-center text-gray-400 transition-colors active:bg-white/10">✕</button>
-        </div>
+            <button onclick="closeAdmin()" class="bg-white/5 w-10 h-10 rounded-full flex items-center justify-center text-gray-400">✕</button>
+        </header>
 
         <div id="admin-content-main">
             <!-- Секция: Заголовки -->
@@ -378,11 +382,10 @@
             </button>
         </div>
 
-        <!-- Секция: Редактор внутреннего списка -->
+        <!-- Секция: Редактор внутреннего списка (по умолчанию скрыта) -->
         <div id="admin-content-sublist" class="hidden">
-            <button onclick="backToMainAdmin()" class="text-cyan-400 text-[11px] font-mono mb-6 flex items-center gap-2 uppercase tracking-widest">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-                Вернуться к корню
+            <button onclick="backToMainAdmin()" class="text-gray-400 text-xs mb-4 flex items-center gap-2">
+                ‹ Назад к главному меню
             </button>
             <div class="admin-card">
                 <div class="admin-section-title text-pink-500" id="admin-sublist-title">
@@ -390,15 +393,15 @@
                 </div>
                 <div id="admin-sublist-items" class="space-y-4"></div>
                 <button onclick="addNewSubItem()" class="btn-add-cyber mt-4">
-                    <span>+</span> Добавить пункт
+                    <span>+</span> Добавить пункт в список
                 </button>
             </div>
             <button onclick="saveSubList()" class="btn-save-cyber">
-                Применить и выйти
+                Готово (вернуться)
             </button>
         </div>
 
-        <div id="save-status" class="text-center text-[10px] text-cyan-400 mt-6 opacity-0 transition-opacity font-mono tracking-tighter">DATA_SYNC_SUCCESSFUL...</div>
+        <div id="save-status" class="text-center text-xs text-cyan-400 mt-4 opacity-0 transition-opacity font-mono">DATABASE_SYNC_COMPLETE...</div>
         <div class="h-24"></div>
     </div>
 
@@ -407,9 +410,11 @@
         tg.expand();
         tg.enableClosingConfirmation();
 
+        // --- КОНФИГУРАЦИЯ ---
         const ADMIN_ID = 758556732; 
         const ADMIN_PASSWORD = "cyber_admin_secure_99"; 
 
+        // --- FIREBASE SETUP ---
         const firebaseConfig = {
             apiKey: "AIzaSyCiYBslwEecbyuMyW5J05nvTs_sXLlurR4",
             authDomain: "tg-menu.firebaseapp.com",
@@ -419,10 +424,11 @@
             appId: "1:754545603793:web:a466fd9b21a298a69d41f0"
         };
 
-        const configDocId = "main_nav_v4_pro"; 
+        const configDocId = "main_nav_v4_pro"; // Новая версия БД для новой структуры
         let db, auth;
         let isOnline = false;
 
+        // --- НОВАЯ СТРУКТУРА ДАННЫХ (PRO) ---
         const defaultData = {
             headerTitle: "Навигация",
             headerSubtitle: "Твой проводник по контенту",
@@ -433,10 +439,12 @@
                     subtitle: "Собрано самое важное",
                     iconContent: '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>',
                     iconColor: "text-blue-400",
-                    mode: "list",
+                    mode: "list", // Тип: Список
                     items: [
                         { title: 'Топ-10 секретов успеха', link: 'https://t.me/your_link_guide1', icon: '🔥' },
-                        { title: 'Как вырасти в доходе', link: 'https://t.me/your_link_guide2', icon: '📈' }
+                        { title: 'Как вырасти в доходе', link: 'https://t.me/your_link_guide2', icon: '📈' },
+                        { title: 'Инструменты эксперта', link: 'https://t.me/your_link_guide3', icon: '🛠' },
+                        { title: 'Гайд по Reels', link: 'https://t.me/your_link_guide4', icon: '🎬' }
                     ]
                 },
                 {
@@ -445,8 +453,41 @@
                     subtitle: "Лучшее качество здесь",
                     iconContent: '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>',
                     iconColor: "text-cyan-400",
-                    mode: "link",
+                    border: "1px solid rgba(0, 242, 255, 0.2)",
+                    mode: "link", // Тип: Ссылка (по умолчанию)
                     directLink: "https://t.me/your_link_2",
+                    items: [] // Пустой список на случай смены режима
+                },
+                {
+                    id: "dev",
+                    title: "Обучение",
+                    subtitle: "в разработке...",
+                    isBadge: true,
+                    iconContent: '<path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c3 3 9 3 12 0v-5"></path>',
+                    iconColor: "text-purple-400",
+                    mode: "link",
+                    directLink: "action:warning",
+                    items: []
+                },
+                {
+                    id: "contact",
+                    title: "Связь со мной",
+                    subtitle: "Отвечаю лично",
+                    iconContent: '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>',
+                    iconColor: "text-green-400",
+                    mode: "link",
+                    directLink: "https://t.me/your_username",
+                    items: []
+                },
+                {
+                    id: "reviews",
+                    title: "Отзывы",
+                    subtitle: "Что говорят подписчики",
+                    iconContent: '<path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>',
+                    iconColor: "text-pink-500",
+                    border: "1px solid rgba(255, 0, 122, 0.2)",
+                    mode: "link",
+                    directLink: "https://t.me/your_link_5",
                     items: []
                 }
             ]
@@ -461,25 +502,35 @@
                 auth = firebase.auth();
                 await auth.signInAnonymously();
                 
-                db.collection('configs').doc(configDocId).onSnapshot((doc) => {
+                const docRef = db.collection('configs').doc(configDocId);
+                docRef.onSnapshot((doc) => {
                     if (doc.exists) {
                         const data = doc.data();
+                        
+                        // Миграция данных (объединение с дефолтными для безопасности)
                         appData = {
                             headerTitle: data.headerTitle || defaultData.headerTitle,
                             headerSubtitle: data.headerSubtitle || defaultData.headerSubtitle,
                             mainMenu: (data.mainMenu || defaultData.mainMenu).map(item => ({
-                                ...item, items: item.items || []
+                                ...item,
+                                items: item.items || [] // Гарантируем наличие массива items
                             }))
                         };
+                        
                         updateUI();
                         setOnlineStatus(true);
                     } else {
-                        db.collection('configs').doc(configDocId).set(appData);
+                        docRef.set(appData);
                         updateUI();
                         setOnlineStatus(true);
                     }
-                }, () => setOnlineStatus(false));
+                }, (error) => {
+                    console.error("Firebase error:", error);
+                    setOnlineStatus(false);
+                    updateUI(); 
+                });
             } catch (e) {
+                console.error("Init error:", e);
                 setOnlineStatus(false);
                 updateUI();
             }
@@ -502,9 +553,10 @@
             if (!container) return;
             container.innerHTML = '';
             
-            appData.mainMenu.forEach((btn) => {
+            (appData.mainMenu || []).forEach((btn) => {
                 const btnEl = document.createElement('div');
                 btnEl.className = 'glass-card p-4 flex items-center cursor-pointer';
+                
                 btnEl.onclick = () => handleMainButtonClick(btn);
 
                 const iconStyle = btn.border ? `border: ${btn.border}` : '';
@@ -528,22 +580,32 @@
             });
         }
 
+        // Логика клика по главной кнопке
         function handleMainButtonClick(btn) {
             if (btn.directLink === 'action:warning') {
                 tg.HapticFeedback.notificationOccurred('warning');
                 return;
             }
-            if (btn.mode === 'list') openSubPage(btn);
-            else handleLink(btn.directLink);
+
+            if (btn.mode === 'list') {
+                openSubPage(btn);
+            } else {
+                handleLink(btn.directLink);
+            }
         }
 
+        // Открытие универсальной внутренней страницы
         function openSubPage(btnData) {
             tg.HapticFeedback.impactOccurred('medium');
+            
+            // Наполняем контент
             document.getElementById('sub-page-title').textContent = btnData.title;
             document.getElementById('sub-page-subtitle').textContent = btnData.subtitle;
+            
             const container = document.getElementById('sub-page-container');
             container.innerHTML = '';
-            btnData.items.forEach(item => {
+
+            (btnData.items || []).forEach(item => {
                 const itemEl = document.createElement('div');
                 itemEl.className = 'glass-card p-4 flex items-center cursor-pointer';
                 itemEl.onclick = () => handleLink(item.link);
@@ -554,13 +616,15 @@
                 `;
                 container.appendChild(itemEl);
             });
+
+            // Анимация перехода
             document.getElementById('main-page').classList.replace('active', 'hidden-left');
             document.getElementById('sub-page').classList.replace('hidden-right', 'active');
             tg.BackButton.show();
         }
 
-        const subPage = document.getElementById('sub-page');
         const mainPage = document.getElementById('main-page');
+        const subPage = document.getElementById('sub-page');
         const adminPage = document.getElementById('admin-page');
 
         tg.BackButton.onClick(() => hideSubPage());
@@ -573,13 +637,33 @@
         }
 
         function handleLink(url) {
-            if (!url) return;
             tg.HapticFeedback.impactOccurred('medium');
+            if (!url) return;
             if (url.startsWith('https://t.me/')) tg.openTelegramLink(url);
             else tg.openLink(url);
         }
 
-        // --- ADMIN LOGIC ---
+        // --- ЛОГИКА СВАЙПА (ДЛЯ SUB-PAGE) ---
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        subPage.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+            touchStartY = e.changedTouches[0].screenY;
+        }, { passive: true });
+
+        subPage.addEventListener('touchend', (e) => {
+            const touchEndX = e.changedTouches[0].screenX;
+            const touchEndY = e.changedTouches[0].screenY;
+            const diffX = touchEndX - touchStartX;
+            const diffY = Math.abs(touchEndY - touchStartY);
+            if (touchStartX < 80 && diffX > 70 && diffY < 50) {
+                hideSubPage();
+            }
+        }, { passive: true });
+
+
+        // --- ЛОГИКА АДМИНКИ ---
         let tapCount = 0;
         let tapTimer;
         document.getElementById('nav-header').addEventListener('click', () => {
@@ -587,22 +671,32 @@
             clearTimeout(tapTimer);
             tapTimer = setTimeout(() => tapCount = 0, 1000);
             if (tapCount >= 5) {
-                const password = prompt('ROOT_ACCESS_PASSWORD:');
-                if (password === ADMIN_PASSWORD) openAdmin();
+                const userId = tg.initDataUnsafe?.user?.id;
+                if (userId === ADMIN_ID) openAdmin();
+                else {
+                    const password = prompt('Пароль администратора:');
+                    if (password === ADMIN_PASSWORD) openAdmin();
+                    else if (password !== null) alert('Доступ запрещен');
+                }
                 tapCount = 0;
             }
         });
 
         let tempAppData = null;
-        let currentEditingIndex = null;
+        let currentEditingIndex = null; // Индекс редактируемой кнопки
 
         function openAdmin() {
             tg.HapticFeedback.impactOccurred('heavy');
             tempAppData = JSON.parse(JSON.stringify(appData));
+            
+            // Заголовки
             document.getElementById('admin-header-title').value = tempAppData.headerTitle;
             document.getElementById('admin-header-subtitle').value = tempAppData.headerSubtitle;
+            
+            // Сброс вида
             document.getElementById('admin-content-main').classList.remove('hidden');
             document.getElementById('admin-content-sublist').classList.add('hidden');
+            
             renderAdminMainMenu();
             adminPage.classList.replace('hidden-bottom', 'active-modal');
         }
@@ -610,34 +704,51 @@
         function renderAdminMainMenu() {
             const list = document.getElementById('admin-main-menu-list');
             list.innerHTML = '';
-            tempAppData.mainMenu.forEach((btn, index) => {
+            (tempAppData.mainMenu || []).forEach((btn, index) => {
                 const div = document.createElement('div');
                 div.className = "guide-item-admin";
-                let modeHtml = btn.mode === 'link' 
-                    ? `<input type="text" class="admin-input mt-2" value="${btn.directLink || ''}" placeholder="URL" onchange="tempAppData.mainMenu[${index}].directLink = this.value">`
-                    : `<button onclick="editSubList(${index})" class="btn-edit-list uppercase tracking-tighter font-bold">Manage List (${(btn.items || []).length}) ›</button>`;
+                
+                // Определение отображения режима
+                let modeControlHtml = '';
+                if (btn.mode === 'link') {
+                    modeControlHtml = `
+                        <input type="text" class="admin-input mt-2" value="${btn.directLink || ''}" placeholder="URL ссылки" onchange="tempAppData.mainMenu[${index}].directLink = this.value">
+                    `;
+                } else {
+                    modeControlHtml = `
+                        <button onclick="editSubList(${index})" class="btn-edit-list">
+                            Редактировать список (${(btn.items || []).length} шт.) ›
+                        </button>
+                    `;
+                }
 
                 div.innerHTML = `
                     <div class="flex justify-between items-center mb-2">
-                        <span class="text-[9px] font-mono text-cyan-400 opacity-60">ID_${index}_NODE</span>
-                        <button onclick="removeMainMenuButton(${index})" class="btn-delete-icon text-sm">✕</button>
+                        <span class="text-[10px] text-cyan-400">КНОПКА ${index + 1}</span>
+                        <button onclick="removeMainMenuButton(${index})" class="btn-delete-icon">✕</button>
                     </div>
-                    <label class="admin-label">Label</label>
+                    
+                    <label class="admin-label">Название</label>
                     <input type="text" class="admin-input" value="${btn.title}" onchange="tempAppData.mainMenu[${index}].title = this.value">
-                    <label class="admin-label">Status Text</label>
+                    
+                    <label class="admin-label">Подзаголовок (Статус)</label>
                     <input type="text" class="admin-input" value="${btn.subtitle}" onchange="tempAppData.mainMenu[${index}].subtitle = this.value">
-                    <select class="admin-select mt-2" onchange="changeBtnMode(${index}, this.value)">
-                        <option value="link" ${btn.mode === 'link' ? 'selected' : ''}>DIRECT_URL</option>
-                        <option value="list" ${btn.mode === 'list' ? 'selected' : ''}>NESTED_COLLECTION</option>
+
+                    <label class="admin-label mt-2">Тип действия</label>
+                    <select class="admin-select" onchange="changeBtnMode(${index}, this.value)">
+                        <option value="link" ${btn.mode === 'link' ? 'selected' : ''}>Прямая ссылка</option>
+                        <option value="list" ${btn.mode === 'list' ? 'selected' : ''}>Внутренний список</option>
                     </select>
-                    ${modeHtml}
+                    
+                    ${modeControlHtml}
                 `;
                 list.appendChild(div);
             });
         }
 
-        function changeBtnMode(idx, mode) {
-            tempAppData.mainMenu[idx].mode = mode;
+        function changeBtnMode(index, newMode) {
+            tempAppData.mainMenu[index].mode = newMode;
+            if (!tempAppData.mainMenu[index].items) tempAppData.mainMenu[index].items = [];
             renderAdminMainMenu();
         }
 
@@ -645,64 +756,116 @@
             currentEditingIndex = index;
             document.getElementById('admin-content-main').classList.add('hidden');
             document.getElementById('admin-content-sublist').classList.remove('hidden');
-            document.getElementById('admin-sublist-title').textContent = `Sub-items: ${tempAppData.mainMenu[index].title}`;
+            
+            const btnTitle = tempAppData.mainMenu[index].title;
+            document.getElementById('admin-sublist-title').textContent = `Список для: ${btnTitle}`;
+            
             renderSubListItems();
         }
 
         function renderSubListItems() {
             const list = document.getElementById('admin-sublist-items');
             list.innerHTML = '';
-            tempAppData.mainMenu[currentEditingIndex].items.forEach((item, i) => {
+            const items = tempAppData.mainMenu[currentEditingIndex].items || [];
+            
+            items.forEach((item, itemIndex) => {
                 const div = document.createElement('div');
                 div.className = "guide-item-admin";
                 div.innerHTML = `
-                    <div class="flex justify-between mb-2"><span class="text-[9px] opacity-40 font-mono">SUB_${i}</span><button onclick="removeSubItem(${i})" class="text-red-500/50">✕</button></div>
-                    <div class="flex gap-2">
-                        <input type="text" class="admin-input w-12 text-center" value="${item.icon}" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${i}].icon = this.value">
-                        <input type="text" class="admin-input flex-1" value="${item.title}" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${i}].title = this.value">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-[10px] text-gray-500">ПУНКТ ${itemIndex + 1}</span>
+                        <button onclick="removeSubItem(${itemIndex})" class="btn-delete-icon">✕</button>
                     </div>
-                    <input type="text" class="admin-input" value="${item.link}" placeholder="URL" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${i}].link = this.value">
+                    <div class="flex gap-2">
+                        <input type="text" class="admin-input w-16 text-center" value="${item.icon}" placeholder="Icon" onchange="updateSubItem(${itemIndex}, 'icon', this.value)">
+                        <input type="text" class="admin-input flex-1" value="${item.title}" placeholder="Название" onchange="updateSubItem(${itemIndex}, 'title', this.value)">
+                    </div>
+                    <input type="text" class="admin-input mt-1" value="${item.link}" placeholder="Ссылка" onchange="updateSubItem(${itemIndex}, 'link', this.value)">
                 `;
                 list.appendChild(div);
             });
         }
 
+        function updateSubItem(itemIndex, field, value) {
+            tempAppData.mainMenu[currentEditingIndex].items[itemIndex][field] = value;
+        }
+
         function addNewSubItem() {
-            tempAppData.mainMenu[currentEditingIndex].items.push({title:'New Item', link:'', icon:'📄'});
+            if (!tempAppData.mainMenu[currentEditingIndex].items) tempAppData.mainMenu[currentEditingIndex].items = [];
+            tempAppData.mainMenu[currentEditingIndex].items.push({
+                title: 'Новый пункт',
+                link: '',
+                icon: '🔹'
+            });
             renderSubListItems();
         }
 
-        function removeSubItem(i) {
-            tempAppData.mainMenu[currentEditingIndex].items.splice(i, 1);
-            renderSubListItems();
+        function removeSubItem(itemIndex) {
+            if(confirm('Удалить этот пункт?')) {
+                tempAppData.mainMenu[currentEditingIndex].items.splice(itemIndex, 1);
+                renderSubListItems();
+            }
         }
 
-        function saveSubList() { backToMainAdmin(); }
+        function saveSubList() {
+            // Просто возвращаемся, данные уже в tempAppData
+            backToMainAdmin();
+        }
+
         function backToMainAdmin() {
             document.getElementById('admin-content-sublist').classList.add('hidden');
             document.getElementById('admin-content-main').classList.remove('hidden');
-            renderAdminMainMenu();
+            currentEditingIndex = null;
+            renderAdminMainMenu(); // Обновить счетчики items
         }
 
         function addNewMainMenuButton() {
-            tempAppData.mainMenu.push({title:'New', subtitle:'Status', iconContent:'<path d="M12 2v20M2 12h20"/>', mode:'link', items:[]});
+            tempAppData.mainMenu.push({
+                id: "new",
+                title: "Новая кнопка",
+                subtitle: "Описание",
+                iconContent: '<path d="M12 2v20M2 12h20"></path>',
+                iconColor: "text-white",
+                mode: "link",
+                directLink: "",
+                items: []
+            });
             renderAdminMainMenu();
         }
 
-        function removeMainMenuButton(i) {
-            if(confirm('Delete?')) { tempAppData.mainMenu.splice(i,1); renderAdminMainMenu(); }
+        function removeMainMenuButton(index) {
+            if(confirm('Удалить эту кнопку?')) {
+                tempAppData.mainMenu.splice(index, 1);
+                renderAdminMainMenu();
+            }
         }
 
-        function closeAdmin() { adminPage.classList.replace('active-modal', 'hidden-bottom'); }
+        function closeAdmin() {
+            adminPage.classList.replace('active-modal', 'hidden-bottom');
+            tempAppData = null;
+            currentEditingIndex = null;
+        }
 
         async function saveAdminData() {
+            if (!db) return alert("БД не подключена.");
+            
+            tg.HapticFeedback.impactOccurred('medium');
+            
             tempAppData.headerTitle = document.getElementById('admin-header-title').value;
             tempAppData.headerSubtitle = document.getElementById('admin-header-subtitle').value;
+
             try {
                 await db.collection('configs').doc(configDocId).set(tempAppData);
-                document.getElementById('save-status').style.opacity = '1';
-                setTimeout(() => { document.getElementById('save-status').style.opacity = '0'; closeAdmin(); }, 1500);
-            } catch(e) { alert('Save Error'); }
+                
+                const status = document.getElementById('save-status');
+                status.style.opacity = '1';
+                setTimeout(() => { 
+                    status.style.opacity = '0'; 
+                    closeAdmin(); 
+                }, 1500);
+            } catch (e) {
+                alert("Ошибка при сохранении данных.");
+            }
         }
 
         initApp();
