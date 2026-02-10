@@ -4,7 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Cyber Navigation</title>
+    
+    <!-- Подключение Telegram WebApp -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <!-- Подключение Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
@@ -19,10 +27,11 @@
             color: white;
             overflow: hidden;
             height: 100vh;
+            width: 100vw;
             margin: 0;
+            position: fixed;
         }
 
-        /* Анимированный фон */
         .bg-glow {
             position: fixed;
             top: 0;
@@ -49,7 +58,6 @@
             100% { transform: translate(30px, 50px) scale(1.1); }
         }
 
-        /* Контейнеры экранов */
         .page {
             position: absolute;
             top: 0;
@@ -58,17 +66,20 @@
             height: 100%;
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             overflow-y: auto;
-            padding: 24px 20px 40px;
+            padding: 24px 20px calc(40px + env(safe-area-inset-bottom));
             -webkit-overflow-scrolling: touch;
+            display: flex;
+            flex-direction: column;
         }
 
         .page::-webkit-scrollbar { width: 0px; }
 
         .hidden-left { transform: translateX(-100%); opacity: 0; pointer-events: none; }
         .hidden-right { transform: translateX(100%); opacity: 0; pointer-events: none; }
+        .hidden-bottom { transform: translateY(100%); opacity: 0; pointer-events: none; }
         .active { transform: translateX(0); opacity: 1; pointer-events: all; }
+        .active-modal { transform: translateY(0); opacity: 1; pointer-events: all; }
 
-        /* Эффект стекла */
         .glass-card {
             background: rgba(255, 255, 255, 0.04);
             backdrop-filter: blur(20px);
@@ -85,7 +96,6 @@
             background: rgba(255, 255, 255, 0.08);
         }
 
-        /* Иконки */
         .icon-box {
             width: 54px;
             height: 54px;
@@ -107,7 +117,6 @@
             -webkit-text-fill-color: transparent;
         }
 
-        /* Бейдж "в разработке" */
         .badge-dev {
             font-size: 10px;
             padding: 2px 8px;
@@ -117,6 +126,58 @@
             border: 1px solid rgba(255, 0, 122, 0.3);
             display: inline-block;
             margin-top: 4px;
+        }
+
+        .admin-input {
+            width: 100%;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+        .admin-input:focus {
+            outline: none;
+            border-color: var(--neon-color);
+        }
+        .admin-label {
+            font-size: 10px;
+            color: #aaa;
+            margin-bottom: 4px;
+            display: block;
+            text-transform: uppercase;
+        }
+        .admin-section {
+            margin-bottom: 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding-bottom: 16px;
+        }
+        .admin-row {
+            display: flex;
+            gap: 8px;
+        }
+        .btn-delete {
+            background: rgba(255, 0, 0, 0.2);
+            color: #ff4d4d;
+            border: 1px solid rgba(255, 0, 0, 0.3);
+            border-radius: 8px;
+            width: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 8px;
+        }
+        .btn-add {
+            background: rgba(0, 242, 255, 0.1);
+            color: var(--neon-color);
+            border: 1px dashed var(--neon-color);
+            border-radius: 12px;
+            padding: 12px;
+            width: 100%;
+            font-size: 14px;
+            margin-top: 10px;
         }
     </style>
 </head>
@@ -129,12 +190,11 @@
     <!-- ГЛАВНЫЙ ЭКРАН -->
     <div id="main-page" class="page active">
         <header class="mb-10 mt-4 text-center">
-            <h1 class="text-3xl font-bold title-gradient tracking-tight">Навигация</h1>
+            <h1 id="nav-header" class="text-3xl font-bold title-gradient tracking-tight select-none">Навигация</h1>
             <p class="text-gray-500 text-sm mt-2">Твой проводник по контенту</p>
         </header>
 
         <div class="grid gap-4">
-            <!-- КНОПКА 1: Все гайды -->
             <div class="glass-card p-4 flex items-center cursor-pointer" onclick="showGuides()">
                 <div class="icon-box">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-blue-400">
@@ -148,21 +208,19 @@
                 <div class="opacity-30 text-xl">›</div>
             </div>
 
-            <!-- КНОПКА 2: Мои услуги -->
-            <div class="glass-card p-4 flex items-center cursor-pointer" onclick="handleLink('https://t.me/your_link_2')">
+            <div class="glass-card p-4 flex items-center cursor-pointer" onclick="openDynamicLink('service')">
                 <div class="icon-box" style="border: 1px solid rgba(0, 242, 255, 0.2)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-cyan-400">
                         <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                     </svg>
                 </div>
                 <div class="flex-1">
-                    <h3 class="font-semibold text-cyan-400 text-white">Мои услуги</h3>
+                    <h3 id="display-service-title" class="font-semibold text-white">Мои услуги</h3>
                     <p class="text-gray-400 text-xs text-white/60">Лучшее качество здесь</p>
                 </div>
                 <div class="opacity-30 text-xl">›</div>
             </div>
 
-            <!-- КНОПКА 3: Обучение -->
             <div class="glass-card p-4 flex items-center cursor-pointer" onclick="tg.HapticFeedback.notificationOccurred('warning')">
                 <div class="icon-box">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-purple-400">
@@ -177,7 +235,6 @@
                 <div class="opacity-30 text-xl">›</div>
             </div>
 
-            <!-- КНОПКА 4: Связь со мной -->
             <div class="glass-card p-4 flex items-center cursor-pointer" onclick="handleLink('https://t.me/your_username')">
                 <div class="icon-box">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-green-400">
@@ -191,23 +248,22 @@
                 <div class="opacity-30 text-xl">›</div>
             </div>
 
-            <!-- КНОПКА 5: Отзывы -->
-            <div class="glass-card p-4 flex items-center cursor-pointer" onclick="handleLink('https://t.me/your_link_5')">
+            <div class="glass-card p-4 flex items-center cursor-pointer" onclick="openDynamicLink('reviews')">
                 <div class="icon-box" style="border: 1px solid rgba(255, 0, 122, 0.2)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-pink-500">
                         <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
                     </svg>
                 </div>
                 <div class="flex-1">
-                    <h3 class="font-semibold text-pink-500">Отзывы</h3>
+                    <h3 id="display-reviews-title" class="font-semibold text-pink-500">Отзывы</h3>
                     <p class="text-gray-400 text-xs text-white/60">Что говорят подписчики</p>
                 </div>
                 <div class="opacity-30 text-xl">›</div>
             </div>
         </div>
 
-        <footer class="mt-16 text-center">
-            <p class="text-[9px] uppercase tracking-[0.3em] text-gray-600 opacity-50">Visual Experience v1.3</p>
+        <footer class="mt-auto pt-16 pb-8 text-center">
+            <p class="text-[9px] uppercase tracking-[0.3em] text-gray-600 opacity-50">Visual Experience v1.4</p>
         </footer>
     </div>
 
@@ -217,83 +273,245 @@
             <h1 class="text-3xl font-bold title-gradient tracking-tight text-blue-400">Библиотека</h1>
             <p class="text-gray-500 text-sm mt-2">Выбери интересующую категорию</p>
         </header>
+        <div id="guides-container" class="grid gap-4"></div>
+        <div class="mt-auto h-20"></div> 
+    </div>
 
-        <div class="grid gap-4">
-            <!-- КАТЕГОРИЯ 1 -->
-            <div class="glass-card p-4 flex items-center cursor-pointer" onclick="handleLink('https://t.me/your_link_guide1')">
-                <div class="icon-box text-blue-300">🔥</div>
-                <div class="flex-1 text-white font-medium">Топ-10 секретов успеха</div>
-                <div class="opacity-30">›</div>
+    <!-- ЭКРАН АДМИНКИ -->
+    <div id="admin-page" class="page hidden-bottom" style="background: rgba(0,0,0,0.95); z-index: 50;">
+        <header class="mb-6 flex justify-between items-center">
+            <h2 class="text-2xl font-bold text-white">Админ Панель</h2>
+            <button onclick="closeAdmin()" class="text-gray-400 p-2">✕</button>
+        </header>
+        <div id="admin-content">
+            <div class="admin-section">
+                <label class="admin-label">Кнопка: Мои услуги</label>
+                <input type="text" id="admin-service-title" class="admin-input" placeholder="Название">
+                <input type="text" id="admin-service-link" class="admin-input" placeholder="Ссылка (https://...)">
             </div>
-            
-            <!-- КАТЕГОРИЯ 2 -->
-            <div class="glass-card p-4 flex items-center cursor-pointer" onclick="handleLink('https://t.me/your_link_guide2')">
-                <div class="icon-box text-blue-300">📈</div>
-                <div class="flex-1 text-white font-medium">Как вырасти в доходе</div>
-                <div class="opacity-30">›</div>
+            <div class="admin-section">
+                <label class="admin-label">Кнопка: Отзывы</label>
+                <input type="text" id="admin-reviews-title" class="admin-input" placeholder="Название">
+                <input type="text" id="admin-reviews-link" class="admin-input" placeholder="Ссылка (https://...)">
             </div>
-
-            <!-- КАТЕГОРИЯ 3 -->
-            <div class="glass-card p-4 flex items-center cursor-pointer" onclick="handleLink('https://t.me/your_link_guide3')">
-                <div class="icon-box text-blue-300">🛠</div>
-                <div class="flex-1 text-white font-medium">Инструменты эксперта</div>
-                <div class="opacity-30">›</div>
+            <div class="admin-section">
+                <label class="admin-label mb-2">Гайды (Библиотека)</label>
+                <div id="admin-guides-list"></div>
+                <button onclick="addNewGuide()" class="btn-add">+ Добавить блок</button>
             </div>
-
-            <!-- КАТЕГОРИЯ 4 -->
-            <div class="glass-card p-4 flex items-center cursor-pointer" onclick="handleLink('https://t.me/your_link_guide4')">
-                <div class="icon-box text-blue-300">🎬</div>
-                <div class="flex-1 text-white font-medium">Гайд по Reels</div>
-                <div class="opacity-30">›</div>
-            </div>
+            <button onclick="saveAdminData()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl mt-4 transition-colors">
+                Сохранить изменения
+            </button>
+            <div id="save-status" class="text-center text-xs text-green-400 mt-2 opacity-0 transition-opacity">Сохранено!</div>
         </div>
+        <div class="h-20"></div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
+        console.log("Версия API Telegram:", tg.version);
         tg.expand();
         tg.enableClosingConfirmation();
 
-        // Элементы страниц
+        // --- КОНФИГУРАЦИЯ ---
+        const ADMIN_ID = 758556732; 
+
+        // --- FIREBASE SETUP ---
+        const firebaseConfig = {
+            apiKey: "ВСТАВЬ_API_KEY",
+            authDomain: "ПРОЕКТ.firebaseapp.com",
+            projectId: "ПРОЕКТ_ID",
+            storageBucket: "ПРОЕКТ.appspot.com",
+            messagingSenderId: "ОТПРАВИТЕЛЬ_ID",
+            appId: "APP_ID"
+        };
+
+        const appId = "cyber-nav-v1";
+        let db, auth;
+        let appData = {
+            service: { title: 'Мои услуги', link: 'https://t.me/your_link_2' },
+            reviews: { title: 'Отзывы', link: 'https://t.me/your_link_5' },
+            guides: [
+                { title: 'Топ-10 секретов успеха', link: 'https://t.me/your_link_guide1', icon: '🔥' },
+                { title: 'Как вырасти в доходе', link: 'https://t.me/your_link_guide2', icon: '📈' },
+                { title: 'Инструменты эксперта', link: 'https://t.me/your_link_guide3', icon: '🛠' },
+                { title: 'Гайд по Reels', link: 'https://t.me/your_link_guide4', icon: '🎬' }
+            ]
+        };
+
+        async function initApp() {
+            try {
+                if (firebaseConfig.apiKey !== "ВСТАВЬ_API_KEY") {
+                    const app = firebase.initializeApp(firebaseConfig);
+                    db = firebase.firestore();
+                    auth = firebase.auth();
+
+                    await auth.signInAnonymously();
+                    
+                    const docRef = db.collection('configs').doc(appId);
+                    docRef.onSnapshot((doc) => {
+                        if (doc.exists) {
+                            appData = doc.data();
+                            updateUI();
+                        }
+                    });
+                } else {
+                    console.log("Демо-режим: вставьте ключи Firebase в код.");
+                    updateUI();
+                }
+            } catch (e) {
+                console.error("Ошибка Firebase:", e);
+                updateUI();
+            }
+        }
+
+        let tempAppData = null;
+
+        function updateUI() {
+            document.getElementById('display-service-title').textContent = appData.service.title;
+            document.getElementById('display-reviews-title').textContent = appData.reviews.title;
+            renderGuides();
+        }
+
+        function renderGuides() {
+            const container = document.getElementById('guides-container');
+            if (!container) return;
+            container.innerHTML = '';
+            appData.guides.forEach((guide) => {
+                const guideEl = document.createElement('div');
+                guideEl.className = 'glass-card p-4 flex items-center cursor-pointer';
+                guideEl.onclick = () => handleLink(guide.link);
+                guideEl.innerHTML = `
+                    <div class="icon-box text-blue-300 text-xl">${guide.icon || '📄'}</div>
+                    <div class="flex-1 text-white font-medium">${guide.title}</div>
+                    <div class="opacity-30 text-xl">›</div>
+                `;
+                container.appendChild(guideEl);
+            });
+        }
+
         const mainPage = document.getElementById('main-page');
         const guidesPage = document.getElementById('guides-page');
+        const adminPage = document.getElementById('admin-page');
 
-        // Кнопка "Назад" от Telegram
-        tg.BackButton.onClick(() => {
-            hideGuides();
-        });
+        tg.BackButton.onClick(() => hideGuides());
 
         function showGuides() {
             tg.HapticFeedback.impactOccurred('medium');
-            mainPage.classList.remove('active');
-            mainPage.classList.add('hidden-left');
-            
-            guidesPage.classList.remove('hidden-right');
-            guidesPage.classList.add('active');
-            
-            tg.BackButton.show(); // Показываем системную кнопку "Назад"
+            mainPage.classList.replace('active', 'hidden-left');
+            guidesPage.classList.replace('hidden-right', 'active');
+            tg.BackButton.show();
         }
 
         function hideGuides() {
             tg.HapticFeedback.impactOccurred('light');
-            guidesPage.classList.remove('active');
-            guidesPage.classList.add('hidden-right');
-            
-            mainPage.classList.remove('hidden-left');
-            mainPage.classList.add('active');
-            
-            tg.BackButton.hide(); // Прячем кнопку "Назад"
+            guidesPage.classList.replace('active', 'hidden-right');
+            mainPage.classList.replace('hidden-left', 'active');
+            tg.BackButton.hide();
         }
 
         function handleLink(url) {
             tg.HapticFeedback.impactOccurred('medium');
-            if (url.startsWith('https://t.me/')) {
+            if (url && url.startsWith('https://t.me/')) {
                 tg.openTelegramLink(url);
-            } else {
+            } else if (url) {
                 tg.openLink(url);
             }
         }
 
+        function openDynamicLink(key) {
+            if (appData[key]?.link) handleLink(appData[key].link);
+        }
+
+        let tapCount = 0;
+        let tapTimer;
+        document.getElementById('nav-header').addEventListener('click', () => {
+            tapCount++;
+            clearTimeout(tapTimer);
+            tapTimer = setTimeout(() => tapCount = 0, 1000);
+            if (tapCount >= 5) {
+                const userId = tg.initDataUnsafe?.user?.id;
+                if (userId === ADMIN_ID) {
+                    openAdmin();
+                } else {
+                    console.log("Access Denied for user:", userId);
+                    tg.showAlert('Доступ запрещен.');
+                }
+                tapCount = 0;
+            }
+        });
+
+        function openAdmin() {
+            tg.HapticFeedback.impactOccurred('heavy');
+            tempAppData = JSON.parse(JSON.stringify(appData));
+            document.getElementById('admin-service-title').value = tempAppData.service.title;
+            document.getElementById('admin-service-link').value = tempAppData.service.link;
+            document.getElementById('admin-reviews-title').value = tempAppData.reviews.title;
+            document.getElementById('admin-reviews-link').value = tempAppData.reviews.link;
+            renderAdminGuides();
+            adminPage.classList.replace('hidden-bottom', 'active-modal');
+        }
+
+        function renderAdminGuides() {
+            const list = document.getElementById('admin-guides-list');
+            list.innerHTML = '';
+            tempAppData.guides.forEach((guide, index) => {
+                const div = document.createElement('div');
+                div.className = "mb-3";
+                div.innerHTML = `
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-xs text-gray-400">Блок #${index + 1}</span>
+                        <button onclick="removeGuide(${index})" class="btn-delete">✕</button>
+                    </div>
+                    <div class="admin-row">
+                        <input type="text" class="admin-input w-1/5 text-center" value="${guide.icon}" onchange="updateGuideData(${index}, 'icon', this.value)">
+                        <input type="text" class="admin-input w-4/5" value="${guide.title}" onchange="updateGuideData(${index}, 'title', this.value)">
+                    </div>
+                    <input type="text" class="admin-input" value="${guide.link}" onchange="updateGuideData(${index}, 'link', this.value)">
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function addNewGuide() {
+            tempAppData.guides.push({ title: 'Новый гайд', link: '', icon: '📄' });
+            renderAdminGuides();
+        }
+
+        function removeGuide(index) {
+            if(confirm('Удалить?')) {
+                tempAppData.guides.splice(index, 1);
+                renderAdminGuides();
+            }
+        }
+
+        function updateGuideData(index, field, value) {
+            tempAppData.guides[index][field] = value;
+        }
+
+        function closeAdmin() {
+            adminPage.classList.replace('active-modal', 'hidden-bottom');
+            tempAppData = null;
+        }
+
+        async function saveAdminData() {
+            if (!db) return tg.showAlert("Firebase не настроен!");
+            tg.HapticFeedback.impactOccurred('medium');
+            tempAppData.service.title = document.getElementById('admin-service-title').value;
+            tempAppData.service.link = document.getElementById('admin-service-link').value;
+            tempAppData.reviews.title = document.getElementById('admin-reviews-title').value;
+            tempAppData.reviews.link = document.getElementById('admin-reviews-link').value;
+            try {
+                await db.collection('configs').doc(appId).set(tempAppData);
+                const status = document.getElementById('save-status');
+                status.style.opacity = '1';
+                setTimeout(() => { status.style.opacity = '0'; closeAdmin(); }, 1500);
+            } catch (e) {
+                tg.showAlert("Ошибка сохранения");
+            }
+        }
+
+        initApp();
         tg.ready();
     </script>
 </body>
