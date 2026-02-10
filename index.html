@@ -394,11 +394,10 @@
             appId: "1:754545603793:web:a466fd9b21a298a69d41f0"
         };
 
-        const configDocId = "main_nav_v3"; // Версия 3 для полного обновления структуры
+        const configDocId = "main_nav_v3"; 
         let db, auth;
         let isOnline = false;
 
-        // --- ДЕФОЛТНЫЕ ДАННЫЕ (ТОЧНАЯ КОПИЯ ДИЗАЙНА) ---
         const defaultData = {
             headerTitle: "Навигация",
             headerSubtitle: "Твой проводник по контенту",
@@ -468,20 +467,15 @@
                 docRef.onSnapshot((doc) => {
                     if (doc.exists) {
                         const data = doc.data();
-                        
-                        // Безопасное обновление с дефолтными значениями
                         appData = {
                             headerTitle: data.headerTitle || defaultData.headerTitle,
                             headerSubtitle: data.headerSubtitle || defaultData.headerSubtitle,
                             mainMenu: data.mainMenu || defaultData.mainMenu,
                             guides: data.guides || defaultData.guides
                         };
-                        
-                        // Если в базе чего-то не хватало, дозапишем
                         if (!data.mainMenu || !data.guides) {
                              docRef.set(appData, { merge: true });
                         }
-
                         updateUI();
                         setOnlineStatus(true);
                     } else {
@@ -490,13 +484,10 @@
                         setOnlineStatus(true);
                     }
                 }, (error) => {
-                    console.error("Firebase error:", error);
                     setOnlineStatus(false);
-                    // Показываем дефолт при ошибке
                     updateUI(); 
                 });
             } catch (e) {
-                console.error("Init error:", e);
                 setOnlineStatus(false);
                 updateUI();
             }
@@ -519,24 +510,18 @@
             const container = document.getElementById('main-menu-container');
             if (!container) return;
             container.innerHTML = '';
-            
             (appData.mainMenu || []).forEach((btn) => {
                 const btnEl = document.createElement('div');
                 btnEl.className = 'glass-card p-4 flex items-center cursor-pointer';
-                
-                // Обработка клика
                 btnEl.onclick = () => {
                     if (btn.link === 'action:guides') showGuides();
                     else if (btn.link === 'action:warning') tg.HapticFeedback.notificationOccurred('warning');
                     else if (btn.link) handleLink(btn.link);
                 };
-
-                // Сборка иконки
                 const iconStyle = btn.border ? `border: ${btn.border}` : '';
                 const subtitleHtml = btn.isBadge 
                     ? `<div class="badge-dev">${btn.subtitle}</div>` 
                     : `<p class="text-gray-400 text-xs text-white/60">${btn.subtitle}</p>`;
-
                 btnEl.innerHTML = `
                     <div class="icon-box" style="${iconStyle}">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="${btn.iconColor || 'text-white'}">
@@ -590,6 +575,30 @@
             tg.BackButton.hide();
         }
 
+        // --- ЛОГИКА СВАЙПА ---
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        guidesPage.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+            touchStartY = e.changedTouches[0].screenY;
+        }, { passive: true });
+
+        guidesPage.addEventListener('touchend', (e) => {
+            const touchEndX = e.changedTouches[0].screenX;
+            const touchEndY = e.changedTouches[0].screenY;
+            handleSwipe(touchStartX, touchEndX, touchStartY, touchEndY);
+        }, { passive: true });
+
+        function handleSwipe(startX, endX, startY, endY) {
+            const diffX = endX - startX;
+            const diffY = Math.abs(endY - startY);
+            // Проверка: свайп вправо, достаточно длинный, и не вертикальный скролл
+            if (startX < 80 && diffX > 70 && diffY < 50) {
+                hideGuides();
+            }
+        }
+
         function handleLink(url) {
             tg.HapticFeedback.impactOccurred('medium');
             if (!url) return;
@@ -621,11 +630,8 @@
         function openAdmin() {
             tg.HapticFeedback.impactOccurred('heavy');
             tempAppData = JSON.parse(JSON.stringify(appData));
-            
-            // Заголовки
             document.getElementById('admin-header-title').value = tempAppData.headerTitle;
             document.getElementById('admin-header-subtitle').value = tempAppData.headerSubtitle;
-            
             renderAdminMainMenu();
             renderAdminGuides();
             adminPage.classList.replace('hidden-bottom', 'active-modal');
@@ -644,10 +650,8 @@
                     </div>
                     <label class="admin-label">Название</label>
                     <input type="text" class="admin-input" value="${btn.title}" onchange="tempAppData.mainMenu[${index}].title = this.value">
-                    
                     <label class="admin-label">Подзаголовок / Статус</label>
                     <input type="text" class="admin-input" value="${btn.subtitle}" onchange="tempAppData.mainMenu[${index}].subtitle = this.value">
-                    
                     <label class="admin-label">Ссылка (или action:guides)</label>
                     <input type="text" class="admin-input" value="${btn.link || ''}" onchange="tempAppData.mainMenu[${index}].link = this.value">
                 `;
@@ -656,12 +660,11 @@
         }
 
         function addNewMainMenuButton() {
-            // Добавляем дефолтную кнопку при создании
             tempAppData.mainMenu.push({
                 id: "new",
                 title: "Новая кнопка",
                 subtitle: "Описание",
-                iconContent: '<path d="M12 2v20M2 12h20"></path>', // Плюс
+                iconContent: '<path d="M12 2v20M2 12h20"></path>',
                 iconColor: "text-white",
                 link: ""
             });
@@ -715,16 +718,11 @@
 
         async function saveAdminData() {
             if (!db) return alert("БД не подключена.");
-            
             tg.HapticFeedback.impactOccurred('medium');
-            
-            // Сохраняем заголовки
             tempAppData.headerTitle = document.getElementById('admin-header-title').value;
             tempAppData.headerSubtitle = document.getElementById('admin-header-subtitle').value;
-
             try {
                 await db.collection('configs').doc(configDocId).set(tempAppData);
-                
                 const status = document.getElementById('save-status');
                 status.style.opacity = '1';
                 setTimeout(() => { 
