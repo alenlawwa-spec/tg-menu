@@ -1291,56 +1291,70 @@
         // --- МАГИЧЕСКАЯ ФУНКЦИЯ (ИСПРАВЛЕНА: ЗАЩИТА ОТ ЗАВИСАНИЯ, ДУБЛЕЙ И ПУСТЫШЕК) ---
         async function magicPaste(itemIdx) {
             const btn = document.getElementById(`btn-magic-${itemIdx}`);
+            // 1. Блокировка повторного нажатия
+            if(btn && btn.disabled) return;
+
             if(btn) {
                 btn.disabled = true;
                 btn.innerText = "⏳...";
             }
             
-            // Включаем блокировку сохранения
             isParsing = true;
             updateSaveButtons();
             
-            const textArea = document.getElementById(`magic-paste-${itemIdx}`);
-            const raw = textArea.value.trim();
-            
-            // 0. ОЧИСТКА ПЕРЕД СТАРТОМ (ЧТОБЫ НЕ БЫЛО ИЛЛЮЗИЙ)
+            // 2. Очистка полей
+            const promptInput = document.getElementById(`prompt-area-${itemIdx}`);
+            if(promptInput) promptInput.value = ''; // Визуальная очистка
             tempAppData.mainMenu[currentEditingIndex].items[itemIdx].imageUrl = "";
             tempAppData.mainMenu[currentEditingIndex].items[itemIdx].prompt = "";
             
-            if(!raw) {
-                tg.showAlert("Сначала вставь ссылку!");
-                resetMagicState(btn);
-                return;
-            }
+            const textArea = document.getElementById(`magic-paste-${itemIdx}`);
+            const raw = textArea.value.trim();
+
+            // Функция для показа ошибки на кнопке
+            const showError = (msg) => {
+                if(btn) {
+                    btn.innerText = msg;
+                    btn.style.color = '#ff4d4d'; // Красный текст
+                    setTimeout(() => {
+                        if(btn) {
+                            btn.innerText = "🪄 Распознать";
+                            btn.disabled = false;
+                            btn.style.color = '';
+                        }
+                        isParsing = false;
+                        updateSaveButtons();
+                    }, 2000);
+                }
+            };
+            
+            if(!raw) return showError("Пустая ссылка!");
 
             const urlRegex = /(https:\/\/t\.me\/[\w\/]+)/;
             const match = raw.match(urlRegex);
             
-            if (!match) {
-                tg.showAlert("Нужна ссылка вида https://t.me/channel/123");
-                resetMagicState(btn);
-                return;
-            }
+            if (!match) return showError("Неверный формат!");
 
             const tgLink = match[0];
             const embedUrl = tgLink + '?embed=1&mode=tme';
             const proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(embedUrl);
 
-            // 1. ТАЙМАУТ (ABORT CONTROLLER)
+            // 3. Таймаут 7 секунд
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 секунд и отбой
+            const timeoutId = setTimeout(() => controller.abort(), 7000);
 
             try {
                 const response = await fetch(proxyUrl, { signal: controller.signal });
-                clearTimeout(timeoutId); // Отменяем таймер, если успели
+                clearTimeout(timeoutId);
+                
+                if (!response.ok) throw new Error("Network response was not ok");
                 
                 const data = await response.json();
-                if (!data.contents) throw new Error("Нет данных от прокси");
+                if (!data.contents) throw new Error("Нет данных");
 
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(data.contents, "text/html");
 
-                // Парсинг картинки
                 let extractedImg = "";
                 const photoWrap = doc.querySelector('.tgme_widget_message_photo_wrap');
                 if (photoWrap) {
@@ -1349,67 +1363,49 @@
                     if (bgMatch) extractedImg = bgMatch[1];
                 }
 
-                // 2. УЛУЧШЕННЫЙ ПАРСИНГ ТЕКСТА (ПРИОРИТЕТЫ ВМЕСТО СКЛЕЙКИ)
                 let extractedText = "";
-                // Приоритет 1: Цитата (blockquote) - чаще всего там промпт
                 const blockquote = doc.querySelector('.tgme_widget_message_text blockquote');
                 if (blockquote) {
                     extractedText = blockquote.innerText.trim();
-                } 
-                // Приоритет 2: Pre (моноширинный блок)
-                else {
+                } else {
                     const pre = doc.querySelector('.tgme_widget_message_text pre');
                     if (pre) {
                          extractedText = pre.innerText.trim();
-                    }
-                    // Приоритет 3: Code (инлайн код)
-                    else {
+                    } else {
                         const code = doc.querySelector('.tgme_widget_message_text code');
                         if (code) {
                              extractedText = code.innerText.trim();
-                        }
-                        // Приоритет 4: Весь текст (Fallback)
-                        else {
+                        } else {
                             const textDiv = doc.querySelector('.tgme_widget_message_text');
                             if (textDiv) extractedText = textDiv.innerText.trim();
                         }
                     }
                 }
 
-                // 3. ПРОВЕРКА НА ПУСТЫШКУ
                 if (!extractedImg && !extractedText) {
-                    throw new Error("Контент не найден или доступ закрыт");
+                    throw new Error("Пусто");
                 }
 
-                // Применяем данные
                 if (extractedImg) tempAppData.mainMenu[currentEditingIndex].items[itemIdx].imageUrl = extractedImg;
                 if (extractedText) tempAppData.mainMenu[currentEditingIndex].items[itemIdx].prompt = extractedText;
 
-                // Перерисовываем список для обновления UI
                 renderSubListItems();
                 
-                // Эффект успеха
                 const wrapper = document.getElementById(`item-wrapper-${itemIdx}`);
                 if(wrapper) wrapper.classList.add('flash-success');
                 
-                tg.showAlert("Готово! ✅");
+                // Успех - сбрасываем кнопку
+                isParsing = false;
+                updateSaveButtons();
 
             } catch (e) {
                 console.error(e);
+                clearTimeout(timeoutId); // Ensure timeout cleared on error
                 if (e.name === 'AbortError') {
-                    tg.showAlert("Время вышло! 🐢 Telegram не отвечает.");
+                    showError("Долго отвечает, попробуй другую ссылку");
                 } else {
-                    tg.showAlert("Ошибка: " + e.message);
+                    showError("Ошибка загрузки");
                 }
-                // При ошибке данные остаются пустыми (мы их очистили в начале)
-                // Кнопку сбрасываем, но ре-рендер не делаем, чтобы не сбить фокус (хотя поля пустые)
-                if(btn) {
-                    btn.innerText = "🪄 Распознать";
-                    btn.disabled = false;
-                }
-            } finally {
-                isParsing = false;
-                updateSaveButtons();
             }
         }
 
@@ -1468,7 +1464,7 @@
                         ${imgPreview}
                         <input type="text" class="admin-input" value="${item.title || ''}" placeholder="Заголовок (необязательно)" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].title=this.value">
                         <input type="text" class="admin-input" value="${item.imageUrl || ''}" placeholder="Ссылка на картинку" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].imageUrl=this.value">
-                        <textarea class="admin-textarea" placeholder="Текст промпта..." onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].prompt=this.value">${item.prompt || ''}</textarea>
+                        <textarea id="prompt-area-${idx}" class="admin-textarea" placeholder="Текст промпта..." onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].prompt=this.value">${item.prompt || ''}</textarea>
                     `;
                 } else {
                     div.innerHTML = `
