@@ -108,6 +108,16 @@
 
         @keyframes pulse-gray { 0% { opacity: 0.5; } }
 
+        /* АНИМАЦИЯ УСПЕХА */
+        @keyframes flashGreen {
+            0% { background-color: rgba(57, 255, 20, 0.3); border-color: var(--neon-green); }
+            100% { background-color: rgba(255, 255, 255, 0.03); border-color: transparent; }
+        }
+        
+        .flash-success {
+            animation: flashGreen 1s ease-out;
+        }
+
         .page {
             position: absolute;
             top: 0;
@@ -182,6 +192,7 @@
             padding: 12px;
             margin-bottom: 12px;
             position: relative;
+            transition: background-color 0.3s;
         }
 
         .admin-input, .admin-textarea {
@@ -294,6 +305,12 @@
             width: 100%;
             margin-top: 10px;
             text-transform: uppercase;
+        }
+        
+        .btn-save-cyber:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            filter: grayscale(1);
         }
 
         .btn-edit-list {
@@ -461,6 +478,11 @@
             display: inline-flex;
             align-items: center;
             gap: 4px;
+        }
+        
+        .magic-btn:disabled {
+            opacity: 0.6;
+            cursor: wait;
         }
 
         .spinner {
@@ -665,7 +687,7 @@
                 </button>
             </div>
 
-            <button onclick="saveAdminData()" class="btn-save-cyber">Сохранить всё</button>
+            <button onclick="saveAdminData()" id="btn-save-global" class="btn-save-cyber">Сохранить всё</button>
         </div>
 
         <div id="admin-content-sublist" class="hidden z-10">
@@ -675,7 +697,7 @@
                 <div id="admin-sublist-items" class="space-y-4"></div>
                 <button onclick="addNewSubItem()" class="btn-add-cyber mt-4"><span>+</span> Добавить пункт</button>
             </div>
-            <button onclick="saveSubList()" class="btn-save-cyber">Готово</button>
+            <button onclick="saveSubList()" id="btn-save-sub" class="btn-save-cyber">Готово</button>
         </div>
 
         <div id="admin-content-moderation" class="hidden z-10">
@@ -693,6 +715,9 @@
         tg.expand();
 
         const ADMIN_ID = 758556732; 
+        
+        // ФЛАГ ПАРСИНГА ДЛЯ БЛОКИРОВКИ КНОПОК
+        let isParsing = false;
 
         // ЗАЩИТА ПРАВОЙ КНОПКИ
         document.addEventListener('contextmenu', event => event.preventDefault());
@@ -1265,17 +1290,43 @@
 
         // --- МАГИЧЕСКАЯ ФУНКЦИЯ ---
         async function magicPaste(itemIdx) {
+            const btn = document.getElementById(`btn-magic-${itemIdx}`);
+            if(btn) {
+                btn.disabled = true;
+                btn.innerText = "⏳...";
+            }
+            
+            // Включаем блокировку
+            isParsing = true;
+            updateSaveButtons(); // Обновляем состояние кнопок сохранения
+            
             const textArea = document.getElementById(`magic-paste-${itemIdx}`);
             const raw = textArea.value;
-            if(!raw) return tg.showAlert("Сначала вставь ссылку!");
+            
+            if(!raw) {
+                tg.showAlert("Сначала вставь ссылку!");
+                isParsing = false;
+                updateSaveButtons();
+                if(btn) { btn.disabled = false; btn.innerText = "🪄 Распознать"; }
+                return;
+            }
 
             const urlRegex = /(https:\/\/t\.me\/[\w\/]+)/;
             const match = raw.match(urlRegex);
             
-            if (!match) return tg.showAlert("Нужна ссылка вида https://t.me/channel/123");
+            if (!match) {
+                tg.showAlert("Нужна ссылка вида https://t.me/channel/123");
+                isParsing = false;
+                updateSaveButtons();
+                if(btn) { btn.disabled = false; btn.innerText = "🪄 Распознать"; }
+                return;
+            }
 
             const tgLink = match[0];
-            tg.showAlert("🔮 Анализирую пост...");
+
+            // 1. ОЧИСТКА ПЕРЕД ВСТАВКОЙ (ВАЖНО!)
+            tempAppData.mainMenu[currentEditingIndex].items[itemIdx].imageUrl = "";
+            tempAppData.mainMenu[currentEditingIndex].items[itemIdx].prompt = "";
 
             try {
                 const embedUrl = tgLink + '?embed=1&mode=tme';
@@ -1308,28 +1359,43 @@
                     if (textDiv) extractedText = textDiv.innerText;
                 }
 
-                let msg = "";
+                // 2. ПРИСВАИВАНИЕ НОВЫХ ЗНАЧЕНИЙ (ТОЛЬКО ЗАМЕНА, БЕЗ +=)
                 if (extractedImg) {
                     tempAppData.mainMenu[currentEditingIndex].items[itemIdx].imageUrl = extractedImg;
-                    msg += "Картинка+ ";
-                } else {
-                    msg += "Картинка не найдена. ";
                 }
 
                 if (extractedText) {
                      tempAppData.mainMenu[currentEditingIndex].items[itemIdx].prompt = extractedText;
-                     msg += "Текст+";
-                } else {
-                     msg += "Текст не найден.";
                 }
 
-                tg.showAlert(msg || "Ничего не найдено");
+                // Обновляем список, чтобы увидеть результат
                 renderSubListItems();
+                
+                // 3. ВИЗУАЛЬНЫЙ КОНТРОЛЬ (ЗЕЛЕНАЯ ВСПЫШКА)
+                // Находим обертку элемента и добавляем класс анимации
+                const wrapper = document.getElementById(`item-wrapper-${itemIdx}`);
+                if(wrapper) {
+                    wrapper.classList.add('flash-success');
+                }
+                
+                tg.showAlert("Данные обновлены! 🟢");
 
             } catch (e) {
                 console.error(e);
                 tg.showAlert("Ошибка доступа к Telegram 🚫");
+            } finally {
+                // Снимаем блокировку
+                isParsing = false;
+                updateSaveButtons();
             }
+        }
+        
+        function updateSaveButtons() {
+            const btnMain = document.getElementById('btn-save-global');
+            const btnSub = document.getElementById('btn-save-sub');
+            
+            if(btnMain) btnMain.disabled = isParsing;
+            if(btnSub) btnSub.disabled = isParsing;
         }
 
         function renderSubListItems() {
@@ -1346,6 +1412,8 @@
 
                 const div = document.createElement('div');
                 div.className = "guide-item-admin";
+                // Добавляем ID для анимации
+                div.id = `item-wrapper-${idx}`;
 
                 if (isGalleryMode) {
                     const imgPreview = item.imageUrl ? 
@@ -1366,7 +1434,7 @@
                         <div class="bg-white/5 p-2 rounded mb-2 border border-white/10">
                             <label class="admin-label text-purple-400">✨ Magic Paste (Ссылка на пост)</label>
                             <textarea id="magic-paste-${idx}" class="admin-input h-10 text-[10px]" placeholder="https://t.me/channel/123"></textarea>
-                            <button onclick="magicPaste(${idx})" class="magic-btn">🪄 Распознать</button>
+                            <button id="btn-magic-${idx}" onclick="magicPaste(${idx})" class="magic-btn">🪄 Распознать</button>
                         </div>
                         ${imgPreview}
                         <input type="text" class="admin-input" value="${item.title || ''}" placeholder="Заголовок (необязательно)" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].title=this.value">
@@ -1426,6 +1494,9 @@
 
         async function saveAdminData() {
             if (tg.initDataUnsafe?.user?.id !== ADMIN_ID) return;
+            // Проверка блокировки
+            if(isParsing) return tg.showAlert("Подождите завершения загрузки!");
+            
             tempAppData.headerTitle = document.getElementById('admin-header-title').value;
             tempAppData.headerSubtitle = document.getElementById('admin-header-subtitle').value;
             await db.collection('configs').doc(configDocId).set(tempAppData);
