@@ -1574,7 +1574,7 @@
             setTimeout(() => { document.getElementById('save-status').style.opacity = '0'; closeAdmin(); }, 1000);
         }
 
-        // --- МОДЕРАЦИЯ (Оставлена без изменений логики, только стили) ---
+        // --- МОДЕРАЦИЯ ---
         function openModeration() {
             document.getElementById('admin-content-main').classList.add('hidden');
             document.getElementById('admin-content-moderation').classList.remove('hidden');
@@ -1585,7 +1585,9 @@
             const list = document.getElementById('moderation-list');
             list.innerHTML = '<div class="text-center mt-4"><div class="spinner relative left-1/2 -ml-5"></div></div>';
             
-            db.collection('reviews').orderBy('date', 'desc').get().then(snap => {
+            // ВАЖНО: Убрана сортировка из запроса .orderBy('date', 'desc'), чтобы избежать ошибки "Missing Index"
+            // Сортировка делается на клиенте. Это надежнее для быстрого запуска.
+            db.collection('reviews').get().then(snap => {
                 list.innerHTML = '';
                 if(snap.empty) {
                     list.innerHTML = '<div class="text-center text-gray-500 text-sm mt-4">Отзывов нет.</div>';
@@ -1595,9 +1597,17 @@
                 const pending = [];
                 const approved = [];
 
+                const docs = [];
                 snap.forEach(doc => {
                     const data = doc.data();
                     data.id = doc.id;
+                    docs.push(data);
+                });
+                
+                // Сортировка по дате (свежие сверху)
+                docs.sort((a,b) => new Date(b.date) - new Date(a.date));
+
+                docs.forEach(data => {
                     if (data.approved) approved.push(data);
                     else pending.push(data);
                 });
