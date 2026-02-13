@@ -1032,14 +1032,25 @@
             tg.BackButton.show();
         }
 
+        // --- УЛУЧШЕННЫЙ РЕНДЕР ГАЛЕРЕИ С ЛЕЧЕНИЕМ ССЫЛОК ---
         function renderGalleryItems(items, container) {
             container.innerHTML = '';
-            items.forEach(item => {
+            items.forEach((item, idx) => {
                 const itemEl = document.createElement('div');
                 itemEl.className = 'gallery-item cursor-pointer animate-pulse-enter';
                 itemEl.onclick = () => openGalleryModal(item.imageUrl, item.prompt);
+                
+                // Добавлен механизм восстановления (tryRepairImage) и ленивая загрузка (loading="lazy")
+                // data-tg-link хранит ссылку на источник для восстановления
                 itemEl.innerHTML = `
-                    <img src="${item.imageUrl}" class="gallery-img" referrerpolicy="no-referrer" onerror="this.src='https://placehold.co/400x600/222/555?text=No+Img'">
+                    <img src="${item.imageUrl}" 
+                         data-tg-link="${item.tgLink || ''}"
+                         class="gallery-img" 
+                         referrerpolicy="no-referrer" 
+                         loading="lazy"
+                         decoding="async"
+                         onerror="tryRepairImage(this)"
+                    >
                     <div class="gallery-overlay pointer-events-none">
                         <div class="text-[10px] text-pink-500 font-bold uppercase tracking-wider mb-1">PROMPT</div>
                         <div class="text-white text-xs font-semibold truncate">${item.title || 'Untitled'}</div>
@@ -1047,6 +1058,49 @@
                 `;
                 container.appendChild(itemEl);
             });
+        }
+
+        // --- МЕХАНИЗМ ВОССТАНОВЛЕНИЯ КАРТИНОК (PARSING ON THE FLY) ---
+        const repairCache = new Set(); // Кэш, чтобы не долбить один и тот же битый урл
+
+        function tryRepairImage(imgEl) {
+            const tgLink = imgEl.getAttribute('data-tg-link');
+            // Если ссылки нет или уже пробовали чинить - ставим заглушку и уходим
+            if (!tgLink || repairCache.has(tgLink)) {
+                imgEl.src = 'https://placehold.co/400x600/222/555?text=Expired+Link';
+                return;
+            }
+
+            repairCache.add(tgLink);
+            console.log("Пытаюсь восстановить картинку из:", tgLink);
+            
+            // Временная заглушка "Загрузка..."
+            imgEl.style.opacity = '0.5';
+
+            const embedUrl = tgLink + '?embed=1&mode=tme';
+            const proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(embedUrl);
+
+            fetch(proxyUrl)
+                .then(res => { if(!res.ok) throw new Error(); return res.json(); })
+                .then(data => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(data.contents, "text/html");
+                    const photoWrap = doc.querySelector('.tgme_widget_message_photo_wrap');
+                    if (photoWrap) {
+                        const style = photoWrap.getAttribute('style');
+                        const bgMatch = style.match(/url\('?(.*?)'?\)/);
+                        if (bgMatch) {
+                            imgEl.src = bgMatch[1]; // Успех! Обновляем src
+                            imgEl.style.opacity = '1';
+                            return;
+                        }
+                    }
+                    throw new Error("No image found");
+                })
+                .catch(() => {
+                    imgEl.src = 'https://placehold.co/400x600/222/555?text=Lost+Signal';
+                    imgEl.style.opacity = '1';
+                });
         }
 
         function hideSubPage() {
@@ -1362,6 +1416,9 @@
             tempAppData.mainMenu[currentEditingIndex].items[itemIdx].imageUrl = "";
             tempAppData.mainMenu[currentEditingIndex].items[itemIdx].prompt = "";
             
+            // Очищаем старую ссылку, если была
+            tempAppData.mainMenu[currentEditingIndex].items[itemIdx].tgLink = "";
+            
             const textArea = document.getElementById(`magic-paste-${itemIdx}`);
             const raw = textArea.value.trim();
 
@@ -1431,6 +1488,9 @@
 
                     if (extractedImg) tempAppData.mainMenu[currentEditingIndex].items[itemIdx].imageUrl = extractedImg;
                     if (extractedText) tempAppData.mainMenu[currentEditingIndex].items[itemIdx].prompt = extractedText;
+                    
+                    // ВАЖНО: СОХРАНЯЕМ ИСХОДНУЮ ССЫЛКУ ДЛЯ ВОССТАНОВЛЕНИЯ
+                    tempAppData.mainMenu[currentEditingIndex].items[itemIdx].tgLink = tgLink;
 
                     renderSubListItems();
                     const wrapper = document.getElementById(`item-wrapper-${itemIdx}`);
@@ -1496,10 +1556,11 @@
                                 <textarea id="magic-paste-${idx}" class="admin-input h-8 text-[10px] mb-0" placeholder="https://t.me/..."></textarea>
                                 <button id="btn-magic-${idx}" onclick="magicPaste(${idx})" class="magic-btn whitespace-nowrap">🪄 OK</button>
                             </div>
+                            <div class="text-[9px] text-gray-500 mt-1 pl-1">При вставке ссылки скрипт теперь запоминает пост для авто-лечения картинки.</div>
                         </div>
                         
                         <div class="bg-blue-900/10 p-2 rounded mb-2 border border-blue-500/10">
-                            <label class="admin-label text-blue-400">Или загрузить свое фото</label>
+                            <label class="admin-label text-blue-400">Или загрузить свое фото (Вечное)</label>
                             <input type="file" accept="image/*" class="text-xs text-gray-400 w-full" onchange="handleFileUpload(this, ${idx})">
                         </div>
 
@@ -1549,7 +1610,8 @@
                 icon: '📄',
                 imageUrl: '',
                 prompt: '',
-                category: ''
+                category: '',
+                tgLink: ''
             });
             renderSubListItems();
         }
