@@ -8,7 +8,7 @@
     <!-- Подключение Telegram WebApp (defer для скорости) -->
     <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
     
-    <!-- Подключение Firebase (ВЕРСИЯ 9.22.0 ПО ЗАПРОСУ) -->
+    <!-- Подключение Firebase (ВЕРСИЯ 9.22.0) -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -24,7 +24,7 @@
         }
 
         html {
-            overscroll-behavior: none; /* Блокировка отскока страницы */
+            overscroll-behavior: none;
         }
 
         body {
@@ -36,14 +36,11 @@
             width: 100vw;
             margin: 0;
             position: fixed;
-            /* Блокировка отскока */
             overscroll-behavior: none;
-            /* ЗАЩИТА КОНТЕНТА */
             -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
             user-select: none;
-            /* Оптимизация рендеринга */
             text-rendering: optimizeLegibility;
             -webkit-font-smoothing: antialiased;
         }
@@ -109,7 +106,7 @@
         }
 
         .status-dot.offline {
-            background: #ff4d4d; /* Красный для оффлайна */
+            background: #ff4d4d;
             animation: pulse-gray 2s infinite;
         }
 
@@ -120,14 +117,6 @@
         }
 
         @keyframes pulse-gray { 0% { opacity: 0.5; } }
-
-        .flash-success {
-            animation: flashGreen 1s ease-out;
-        }
-        @keyframes flashGreen {
-            0% { background-color: rgba(57, 255, 20, 0.3); border-color: var(--neon-green); }
-            100% { background-color: rgba(255, 255, 255, 0.03); border-color: transparent; }
-        }
 
         /* SKELETON LOADER */
         .skeleton {
@@ -153,7 +142,6 @@
             flex-direction: column;
             will-change: transform, opacity;
             content-visibility: auto;
-            /* ВАЖНО: Блокировка горизонтальных жестов браузера */
             touch-action: pan-y; 
         }
 
@@ -363,14 +351,14 @@
             color: var(--neon-yellow); text-shadow: 0 0 10px var(--neon-yellow);
         }
 
-        /* --- PRODUCT CARD STYLES (UPDATED) --- */
+        /* --- PRODUCT CARD STYLES --- */
         .product-card {
             background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 22px;
             overflow: hidden; position: relative; display: flex; flex-direction: column;
             transition: transform 0.2s;
-            height: 100%; /* FIX: Растягиваем на всю высоту ячейки грида */
+            height: 100%;
         }
         .product-card:active { transform: scale(0.97); }
 
@@ -393,12 +381,12 @@
         .product-title {
             font-weight: 600; font-size: 13px; line-height: 1.3; margin-bottom: 4px; color: white;
             display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-            height: 34px; /* FIX: Фиксированная высота заголовка */
+            height: 34px;
         }
         .product-desc-short {
             font-size: 11px; color: #888; margin-bottom: 8px; line-height: 1.4;
             display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
-            flex-grow: 1; /* Занимает доступное место, выталкивая цену вниз */
+            flex-grow: 1;
         }
         .price-block { margin-top: auto; display: flex; align-items: baseline; gap: 6px; }
         .price-new { color: var(--neon-color); font-weight: 700; font-size: 15px; }
@@ -418,7 +406,7 @@
 
         .admin-status-indicator {
             width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-left: 8px;
-            cursor: pointer; transition: transform 0.2s; /* CLICKABLE */
+            cursor: pointer; transition: transform 0.2s;
         }
         .admin-status-indicator:active { transform: scale(0.8); }
         .admin-status-ok { background: #39ff14; box-shadow: 0 0 5px #39ff14; }
@@ -442,7 +430,6 @@
             <p id="nav-subheader" class="text-gray-500 text-sm mt-2">Твой проводник по контенту</p>
         </header>
 
-        <!-- SKELETON LOADER PRE-RENDERED IN HTML -->
         <div id="main-menu-container" class="grid gap-4">
             <div class="skeleton h-20 w-full"></div>
             <div class="skeleton h-20 w-full"></div>
@@ -479,7 +466,6 @@
         </div>
     </div>
 
-    <!-- PRODUCT MODAL -->
     <div id="product-modal">
         <div class="relative w-full h-full flex flex-col">
             <button onclick="closeProductModal()" class="absolute top-4 right-4 z-50 w-8 h-8 bg-black/50 rounded-full text-white flex items-center justify-center backdrop-blur-md">✕</button>
@@ -504,7 +490,6 @@
 
             <div class="absolute bottom-0 left-0 w-full p-4 bg-gradient-to-t from-black via-black/90 to-transparent">
                 <button id="product-buy-btn" class="btn-save-cyber shadow-[0_0_20px_rgba(0,242,255,0.3)]">
-                    <!-- Text via JS -->
                 </button>
             </div>
         </div>
@@ -596,6 +581,7 @@
         let isParsing = false;
         let tg;
         let availableCategories = new Set();
+        const ADMIN_ID = 758556732;
 
         document.addEventListener('contextmenu', event => event.preventDefault());
 
@@ -628,7 +614,6 @@
             { id: 'text-orange', hex: '#ff8c00' }
         ];
 
-        // 2. Твой личный конфиг (который ты прислала)
         const firebaseConfig = {
           apiKey: "AIzaSyCiYBslwEecbyuMyW5J05nvTs_sXLlurR4",
           authDomain: "tg-menu.firebaseapp.com",
@@ -638,17 +623,13 @@
           appId: "1:754545603793:web:a466fd9b21a298a69d41f0"
         };
         
-        // 3. Инициализация
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
-        const ADMIN_ID = 758556732;
         
-        // 4. ГЛАВНОЕ: Вход и запуск приложения
         auth.signInAnonymously()
           .then(() => {
             console.log("Авторизация успешна!");
-            // Только ПОСЛЕ входа запускаем слушателей базы данных
             initAppLogic();
           })
           .catch((error) => {
@@ -661,7 +642,6 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             initTelegram();
-            // initApp logic removed as it's now handled by the new auth flow above
         });
 
         function initTelegram() {
@@ -692,18 +672,15 @@
         }
 
         function initAppLogic() {
-            // МГНОВЕННАЯ ЗАГРУЗКА ИЗ КЭША (Сохраняем старую логику здесь)
             const cachedData = localStorage.getItem('cyber_nav_cache_' + configDocId);
             if (cachedData) {
                 try {
                     appData = JSON.parse(cachedData);
                     updateUI();
-                    console.log("Cache loaded.");
                 } catch(e) { console.error("Cache error", e); }
             }
             
             db.collection('configs').doc(configDocId).onSnapshot((doc) => {
-                // ПРОВЕРКА ИСТОЧНИКА ДАННЫХ ДЛЯ ИНДИКАТОРА
                 const fromCache = doc.metadata.fromCache;
                 const netStatus = document.getElementById('admin-net-status');
                 if(netStatus) {
@@ -719,7 +696,6 @@
             });
         }
         
-        // --- NEW: FORCE RECONNECT ---
         async function forceReconnect() {
              const dot = document.getElementById('admin-net-status');
              dot.style.transform = "scale(1.5)";
@@ -745,7 +721,6 @@
             const container = document.getElementById('main-menu-container');
             container.innerHTML = '';
             
-            // Если данных нет, оставляем скелетоны (но если массив пустой, значит просто пусто)
             if (!appData.mainMenu) return; 
 
             appData.mainMenu.forEach((btn) => {
@@ -756,7 +731,6 @@
                 const iconSvg = ICON_LIBRARY.find(i => i.id === btn.iconId)?.svg || ICON_LIBRARY[2].svg;
                 const colorHex = COLOR_LIBRARY.find(c => c.id === btn.iconColor)?.hex || 'white';
                 
-                // ВАЖНО: Применяем цвет через style для кастомных цветов
                 btnEl.innerHTML = `
                     <div class="icon-box">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: ${colorHex}">
@@ -883,7 +857,6 @@
             });
         }
         
-        // --- UPDATED PRODUCT STATUS LOGIC ---
         const STATUS_MAP = {
             'sold': { label: 'Продано', class: 'badge-sold' },
             'wait': { label: 'Ожидается', class: 'badge-wait' },
@@ -1064,7 +1037,6 @@
                 const div = document.createElement('div');
                 div.className = "guide-item-admin";
                 
-                // Стрелочки для перемещения
                 const upBtn = idx > 0 ? `<button onclick="moveMainMenuButton(${idx}, -1)" class="px-2 text-gray-500 hover:text-cyan-400 transition">▲</button>` : `<span class="px-2 opacity-0">▲</span>`;
                 const downBtn = idx < total - 1 ? `<button onclick="moveMainMenuButton(${idx}, 1)" class="px-2 text-gray-500 hover:text-cyan-400 transition">▼</button>` : `<span class="px-2 opacity-0">▼</span>`;
 
@@ -1100,7 +1072,6 @@
             });
         }
 
-        // ВОЗВРАЩЕННАЯ ФУНКЦИЯ ПЕРЕМЕЩЕНИЯ КНОПОК МЕНЮ
         function moveMainMenuButton(index, direction) {
             const list = tempAppData.mainMenu;
             const newIndex = index + direction;
@@ -1197,7 +1168,6 @@
 
             items.forEach((item, idx) => {
                 const total = items.length;
-                // Стрелочки для вложенных элементов
                 const upBtn = idx > 0 ? `<button onclick="moveSubListItem(${idx}, -1)" class="text-xs text-gray-500 hover:text-white p-1">▲</button>` : `<span class="p-1 w-4 block"></span>`;
                 const downBtn = idx < total - 1 ? `<button onclick="moveSubListItem(${idx}, 1)" class="text-xs text-gray-500 hover:text-white p-1">▼</button>` : `<span class="p-1 w-4 block"></span>`;
 
@@ -1271,7 +1241,6 @@
             });
         }
 
-        // ВОЗВРАЩЕННАЯ ФУНКЦИЯ ПЕРЕМЕЩЕНИЯ ПОДПУНКТОВ
         function moveSubListItem(index, direction) {
             const list = tempAppData.mainMenu[currentEditingIndex].items;
             const newIndex = index + direction;
@@ -1322,7 +1291,6 @@
         }
         function closeAdmin() { document.getElementById('admin-page').classList.replace('active-modal', 'hidden-bottom'); }
 
-        // 5. ПРИМЕР правильной функции сохранения (для Канваса)
         async function saveAdminData() {
             if (tg.initDataUnsafe?.user?.id !== ADMIN_ID) return;
             
@@ -1336,14 +1304,12 @@
             tempAppData.headerSubtitle = document.getElementById('admin-header-subtitle').value;
 
             try {
-                // ВСЕГДА добавляем твой ID, иначе новые правила не пропустят!
                 const secureData = {
-                  adminId: 758556732, // ПЕРВЫМ ДЕЛОМ ДОБАВЛЕНО
+                  adminId: ADMIN_ID,
                   ...tempAppData,
                   updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 };
                 
-                // ПРИНУДИТЕЛЬНАЯ ЗАПИСЬ С ТАЙМАУТОМ (RACE)
                 const savePromise = db.collection('configs').doc(configDocId).set(secureData, { merge: true });
                 const timeoutPromise = new Promise((_, reject) => 
                     setTimeout(() => reject(new Error("Timeout")), 7000)
@@ -1366,7 +1332,7 @@
 
             } catch (error) {
                 console.error("Ошибка сохранения:", error);
-                alert("У тебя нет прав на редактирование!");
+                alert("У тебя нет прав на редактирование или ошибка доступа!");
                 btns.forEach(b => { b.disabled = false; b.innerText = "Ошибка! Повторить"; b.style.background = "#ff4d4d"; });
             }
         }
@@ -1381,7 +1347,6 @@
             const list = document.getElementById('moderation-list');
             list.innerHTML = '<div class="spinner"></div>';
             
-            // ИСПРАВЛЕНИЕ: Показываем ВСЕ отзывы админу, чтобы он мог видеть одобренные тоже
             db.collection('reviews').get().then(snap => {
                 list.innerHTML = '';
                 if(snap.empty) { list.innerHTML = '<div class="text-center text-gray-500 mt-4">Пусто</div>'; return; }
@@ -1389,10 +1354,8 @@
                 const docs = [];
                 snap.forEach(d => { let obj = d.data(); obj.id = d.id; docs.push(obj); });
                 
-                // Сортировка
                 docs.sort((a,b) => new Date(b.date) - new Date(a.date));
                 
-                // Разделяем на Новые и Активные
                 const pending = docs.filter(r => !r.approved);
                 const approved = docs.filter(r => r.approved);
 
