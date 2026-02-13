@@ -418,7 +418,9 @@
 
         .admin-status-indicator {
             width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-left: 8px;
+            cursor: pointer; transition: transform 0.2s; /* CLICKABLE */
         }
+        .admin-status-indicator:active { transform: scale(0.8); }
         .admin-status-ok { background: #39ff14; box-shadow: 0 0 5px #39ff14; }
         .admin-status-bad { background: #ff4d4d; box-shadow: 0 0 5px #ff4d4d; }
 
@@ -532,7 +534,7 @@
             <div>
                 <h2 class="text-2xl font-bold text-white tracking-tight">
                     Terminal
-                    <span id="admin-net-status" class="admin-status-indicator admin-status-bad"></span>
+                    <span id="admin-net-status" class="admin-status-indicator admin-status-bad" onclick="forceReconnect()" title="Нажми для реконнекта"></span>
                 </h2>
                 <div class="text-[10px] text-cyan-400 font-mono">ACCESS GRANTED // ADMIN_MODE</div>
             </div>
@@ -712,6 +714,17 @@
                     setOnlineStatus(!fromCache);
                 }
             });
+        }
+        
+        // --- NEW: FORCE RECONNECT ---
+        async function forceReconnect() {
+             const dot = document.getElementById('admin-net-status');
+             dot.style.transform = "scale(1.5)";
+             if(confirm("🔄 Перезагрузить соединение с базой?")) {
+                 window.location.reload(); 
+             } else {
+                 dot.style.transform = "scale(1)";
+             }
         }
 
         function setOnlineStatus(online) {
@@ -1262,8 +1275,13 @@
             tempAppData.headerSubtitle = document.getElementById('admin-header-subtitle').value;
 
             try {
-                // ПРИНУДИТЕЛЬНАЯ ЗАПИСЬ
-                await db.collection('configs').doc(configDocId).set(tempAppData);
+                // ПРИНУДИТЕЛЬНАЯ ЗАПИСЬ С ТАЙМАУТОМ (RACE)
+                const savePromise = db.collection('configs').doc(configDocId).set(tempAppData);
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error("Timeout")), 7000)
+                );
+                
+                await Promise.race([savePromise, timeoutPromise]);
                 
                 btns.forEach(b => { 
                     b.innerText = "Успешно сохранено! ✅"; 
@@ -1279,7 +1297,7 @@
 
             } catch (error) {
                 console.error("Save error:", error);
-                alert("ОШИБКА СИНХРОНИЗАЦИИ! 🔴\nДанные не ушли в облако. Проверьте интернет.");
+                alert("ОШИБКА СИНХРОНИЗАЦИИ! 🔴\nДанные не ушли в облако. Проверьте интернет и нажмите красную точку для перезапуска.");
                 btns.forEach(b => { b.disabled = false; b.innerText = "Ошибка! Повторить"; b.style.background = "#ff4d4d"; });
             }
         }
