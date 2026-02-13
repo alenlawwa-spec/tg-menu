@@ -1303,9 +1303,13 @@
 
             try {
                 // ИСПРАВЛЕНИЕ ПРАВ: adminId СТРОГО ПЕРВЫЙ
+                // Удаляем adminId из payload, чтобы гарантировать его позицию в начале
+                const payload = { ...tempAppData };
+                delete payload.adminId;
+
                 const secureData = {
                   adminId: ADMIN_ID,
-                  ...tempAppData,
+                  ...payload,
                   updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 };
                 
