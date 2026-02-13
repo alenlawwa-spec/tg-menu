@@ -870,16 +870,54 @@
         }
 
         async function initApp() {
+            // --- 1. КРИТИЧЕСКОЕ ИЗМЕНЕНИЕ: ЗАГРУЗКА ИЗ КЭША ---
+            // Сначала пробуем загрузить из кэша и отрисовать МГНОВЕННО
+            const cachedData = localStorage.getItem('cyber_nav_cache_' + configDocId);
+            if (cachedData) {
+                try {
+                    appData = JSON.parse(cachedData);
+                    updateUI(); // Рендерим сразу, не дожидаясь сети
+                    console.log("Интерфейс восстановлен из кэша (мгновенно)");
+                } catch(e) {
+                    console.error("Ошибка чтения кэша", e);
+                }
+            }
+
             if (!firebase.apps.length) {
                 firebase.initializeApp(firebaseConfig);
             }
             db = firebase.firestore();
+            
+            // --- ВАЖНО: ВКЛЮЧАЕМ OFFLINE PERSISTENCE ДО ЗАПРОСОВ ---
+            try {
+                await db.enablePersistence({ synchronizeTabs: true });
+                console.log("🔥 Offline Persistence: ACTIVATED");
+            } catch (err) {
+                console.warn("Offline Persistence Error:", err.code);
+            }
+            
             auth = firebase.auth();
-            await auth.signInAnonymously();
+            
+            // --- 2. АВТОРИЗАЦИЯ И СЕТЬ (ФОНОВЫЙ РЕЖИМ) ---
+            // Не блокируем UI ожиданием await, если кэш был. 
+            // Но если кэша не было (первый вход) - придется ждать, иначе будет пусто.
+            if (!cachedData) {
+                 try {
+                    await auth.signInAnonymously();
+                 } catch (e) {
+                     console.error("Auth failed", e);
+                 }
+            } else {
+                 // Если кэш есть, запускаем авторизацию в фоне, не тормозя скрипт
+                 auth.signInAnonymously().catch(e => console.error(e));
+            }
             
             db.collection('configs').doc(configDocId).onSnapshot((doc) => {
                 if (doc.exists) {
                     appData = doc.data();
+                    // --- 3. СОХРАНЕНИЕ В КЭШ ---
+                    localStorage.setItem('cyber_nav_cache_' + configDocId, JSON.stringify(appData));
+                    
                     updateUI();
                     setOnlineStatus(true);
                 }
