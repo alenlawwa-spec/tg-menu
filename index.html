@@ -48,7 +48,7 @@
             -webkit-font-smoothing: antialiased;
         }
 
-        input, textarea {
+        input, textarea, select {
             -webkit-user-select: text;
             -moz-user-select: text;
             -ms-user-select: text;
@@ -775,6 +775,7 @@
         
         let isParsing = false;
         let tg; // Global variable for Telegram WebApp
+        let availableCategories = new Set(); // Кэш категорий для админки
 
         document.addEventListener('contextmenu', event => event.preventDefault());
 
@@ -1102,6 +1103,13 @@
                 itemEl.className = 'gallery-item cursor-pointer animate-pulse-enter';
                 itemEl.onclick = () => openGalleryModal(item.imageUrl, item.prompt);
                 
+                // ИЗМЕНЕНИЕ ДИЗАЙНА ФОТО (Убрана розовая надпись и текст если нет заголовка)
+                const overlay = item.title ? `
+                    <div class="gallery-overlay pointer-events-none">
+                        <div class="text-white text-xs font-semibold truncate">${escapeHtml(item.title)}</div>
+                    </div>
+                ` : '';
+                
                 // Добавлен механизм восстановления (tryRepairImage) и ленивая загрузка (loading="lazy")
                 // data-tg-link хранит ссылку на источник для восстановления
                 itemEl.innerHTML = `
@@ -1113,10 +1121,7 @@
                          decoding="async"
                          onerror="tryRepairImage(this)"
                     >
-                    <div class="gallery-overlay pointer-events-none">
-                        <div class="text-[10px] text-pink-500 font-bold uppercase tracking-wider mb-1">PROMPT</div>
-                        <div class="text-white text-xs font-semibold truncate">${item.title || 'Untitled'}</div>
-                    </div>
+                    ${overlay}
                 `;
                 container.appendChild(itemEl);
             });
@@ -1408,6 +1413,16 @@
             document.getElementById('admin-content-main').classList.add('hidden');
             document.getElementById('admin-content-sublist').classList.remove('hidden');
             document.getElementById('admin-sublist-title').textContent = tempAppData.mainMenu[idx].title;
+            
+            // СБОР КАТЕГОРИЙ ДЛЯ ДРОПДАУНА
+            availableCategories.clear();
+            const items = tempAppData.mainMenu[idx].items || [];
+            items.forEach(item => {
+                if(item.category && item.category.trim()) {
+                    availableCategories.add(item.category.trim());
+                }
+            });
+            
             renderSubListItems();
         }
 
@@ -1578,6 +1593,17 @@
             if(btnMain) btnMain.disabled = isParsing;
             if(btnSub) btnSub.disabled = isParsing;
         }
+        
+        // --- НОВАЯ ФУНКЦИЯ ДЛЯ ДОБАВЛЕНИЯ ГЛОБАЛЬНОЙ КАТЕГОРИИ ---
+        function addNewGlobalCategory() {
+            const input = document.getElementById('new-cat-input');
+            const val = input.value.trim();
+            if(val) {
+                availableCategories.add(val);
+                input.value = '';
+                renderSubListItems();
+            }
+        }
 
         function renderSubListItems() {
             const list = document.getElementById('admin-sublist-items');
@@ -1585,6 +1611,21 @@
             const parentBtn = tempAppData.mainMenu[currentEditingIndex];
             const items = parentBtn.items || [];
             const isGalleryMode = parentBtn.mode === 'gallery';
+            
+            // ДОБАВЛЕН БЛОК УПРАВЛЕНИЯ КАТЕГОРИЯМИ ЕСЛИ ГАЛЕРЕЯ
+            if(isGalleryMode) {
+                const catCreator = document.createElement('div');
+                catCreator.className = 'admin-card mb-4';
+                catCreator.style.background = 'rgba(255,255,255,0.05)';
+                catCreator.innerHTML = `
+                    <div class="admin-section-title text-green-400">Управление категориями</div>
+                    <div class="flex gap-2">
+                        <input type="text" id="new-cat-input" class="admin-input" placeholder="Новая категория..." style="margin-bottom:0">
+                        <button onclick="addNewGlobalCategory()" class="btn-add-cyber" style="width: auto; padding: 0 20px;">+</button>
+                    </div>
+                `;
+                list.appendChild(catCreator);
+            }
             
             items.forEach((item, idx) => {
                 const total = items.length;
@@ -1603,7 +1644,15 @@
                          </div>` 
                         : '';
 
-                    // ОБНОВЛЕННЫЙ HTML ДЛЯ ГАЛЕРЕИ (Загрузка файла и переименование полей)
+                    // ГЕНЕРАЦИЯ ОПЦИЙ ДЛЯ СЕЛЕКТА КАТЕГОРИЙ
+                    let optionsHtml = '<option value="">Без категории</option>';
+                    // Сортируем категории
+                    const sortedCats = Array.from(availableCategories).sort();
+                    sortedCats.forEach(cat => {
+                        const isSelected = item.category === cat ? 'selected' : '';
+                        optionsHtml += `<option value="${cat}" ${isSelected}>${cat}</option>`;
+                    });
+
                     div.innerHTML = `
                         <div class="flex justify-between items-start mb-2">
                              <span class="text-[10px] text-pink-400 font-bold">SLIDE ${idx+1}</span>
@@ -1628,10 +1677,16 @@
 
                         ${imgPreview}
                         
-                        <input type="text" class="admin-input hidden" value="${item.imageUrl || ''}" placeholder="Ссылка на фото"> <!-- Скрытое поле URL, заполняется автоматом -->
+                        <input type="text" class="admin-input hidden" value="${item.imageUrl || ''}" placeholder="Ссылка на фото"> 
                         
                         <input type="text" class="admin-input" value="${item.title || ''}" placeholder="Заголовок (необязательно)" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].title=this.value">
-                        <input type="text" class="admin-input" value="${item.category || ''}" placeholder="Категория" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].category=this.value">
+                        
+                        <!-- ЗАМЕНЕНО НА ВЫПАДАЮЩИЙ СПИСОК -->
+                        <label class="admin-label mt-2">Категория</label>
+                        <select class="admin-select" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].category=this.value">
+                            ${optionsHtml}
+                        </select>
+                        
                         <textarea id="prompt-area-${idx}" class="admin-textarea" placeholder="Текст..." onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].prompt=this.value">${item.prompt || ''}</textarea>
                     `;
                 } else {
