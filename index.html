@@ -1162,8 +1162,8 @@
                     const ctx = canvas.getContext('2d');
                     let w = img.width, h = img.height;
                     
-                    // АГРЕССИВНОЕ СЖАТИЕ: Макс 600px по самой длинной стороне
-                    const MAX_SIDE = 600;
+                    // УЛУЧШЕННОЕ КАЧЕСТВО: Макс 1024px (было 600)
+                    const MAX_SIDE = 1024;
                     if (w > h) {
                         if (w > MAX_SIDE) { h = Math.round(h * (MAX_SIDE / w)); w = MAX_SIDE; }
                     } else {
@@ -1172,8 +1172,8 @@
 
                     canvas.width = w; canvas.height = h; ctx.drawImage(img, 0, 0, w, h);
                     
-                    // КАЧЕСТВО 0.5 (Золотая середина для веса/качества)
-                    callback(canvas.toDataURL('image/jpeg', 0.5));
+                    // КАЧЕСТВО 0.8 (было 0.5) - четче, но все еще сжато
+                    callback(canvas.toDataURL('image/jpeg', 0.8));
                 };
             };
         }
