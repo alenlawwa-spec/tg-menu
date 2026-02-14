@@ -131,15 +131,15 @@
             position: absolute;
             top: 0;
             left: 0;
-            right: 0; /* Centers for max-width */
+            right: 0;
             width: 100%;
             height: 100%;
-            max-width: 600px; /* Task 4: Max width */
-            margin: 0 auto;   /* Task 4: Center */
+            max-width: 600px;
+            margin: 0 auto;
             transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s ease;
             overflow-y: auto;
             overscroll-behavior-y: contain; 
-            padding: calc(24px + env(safe-area-inset-top)) 20px calc(40px + env(safe-area-inset-bottom)); /* Task 4: Safe area */
+            padding: calc(24px + env(safe-area-inset-top)) 20px calc(40px + env(safe-area-inset-bottom));
             -webkit-overflow-scrolling: touch;
             display: flex;
             flex-direction: column;
@@ -360,8 +360,8 @@
             backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 22px;
             overflow: hidden; position: relative; 
-            display: flex; flex-direction: column; /* Task 3: Flex column */
-            height: 100%; /* Task 3: Height 100% */
+            display: flex; flex-direction: column;
+            height: 100%;
             transition: transform 0.2s;
         }
         .product-card:active { transform: scale(0.97); }
@@ -382,7 +382,7 @@
         
         .product-info { 
             padding: 12px; 
-            flex-grow: 1; /* Task 3: Flex grow */
+            flex-grow: 1;
             display: flex; 
             flex-direction: column; 
         }
@@ -398,7 +398,7 @@
             flex-grow: 1;
         }
         .price-block { 
-            margin-top: auto; /* Task 3: Button/Price at bottom */
+            margin-top: auto;
             display: flex; align-items: baseline; gap: 6px; 
         }
         .price-new { color: var(--neon-color); font-weight: 700; font-size: 15px; }
@@ -406,8 +406,35 @@
 
         .product-slider { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; gap: 10px; padding-bottom: 10px; }
         .product-slider::-webkit-scrollbar { display: none; }
-        .product-slide { flex: 0 0 100%; scroll-snap-align: center; border-radius: 16px; overflow: hidden; aspect-ratio: 1/1; background: #000; border: 1px solid rgba(255,255,255,0.1); }
+        
+        .product-slide { 
+            flex: 0 0 100%; 
+            scroll-snap-align: center; 
+            border-radius: 16px; 
+            overflow: hidden; 
+            aspect-ratio: 1/1; 
+            background: #000; 
+            border: 1px solid rgba(255,255,255,0.1); 
+        }
         .product-slide img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* FIX FOR TABLETS / LANDSCAPE MODE */
+        @media (orientation: landscape) {
+            #product-modal-slider {
+                display: flex;
+                justify-content: center;
+            }
+            .product-slide {
+                flex: 0 0 auto;
+                height: 50vh; /* Ограничиваем высоту фото, чтобы было место для текста */
+                width: auto;
+                aspect-ratio: 1/1;
+            }
+            .product-slide img {
+                height: 100%;
+                width: auto;
+            }
+        }
         
         #product-modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5,5,8,0.98);
@@ -659,8 +686,6 @@
                 tg = window.Telegram.WebApp;
                 tg.expand();
                 if (tg.disableVerticalSwipes) tg.disableVerticalSwipes();
-                tg.isClosingConfirmationEnabled = true; // Task 2: Explicitly set property
-                tg.enableClosingConfirmation(); // Task 2: Call method for robustness
                 tg.ready();
                 tg.BackButton.onClick(() => {
                     const galleryModal = document.getElementById('gallery-modal');
@@ -673,7 +698,6 @@
                 tg = {
                     initDataUnsafe: { user: { id: 0, first_name: "BrowserUser" } },
                     expand: () => {}, ready: () => {}, disableVerticalSwipes: () => {},
-                    enableClosingConfirmation: () => {}, 
                     HapticFeedback: { impactOccurred: () => {}, notificationOccurred: () => {}, selectionChanged: () => {} },
                     BackButton: { show: () => {}, hide: () => {}, onClick: () => {} },
                     openLink: (url) => window.open(url, '_blank'),
@@ -686,7 +710,7 @@
 
         function initAppLogic() {
             const cachedData = localStorage.getItem('cyber_nav_cache_' + configDocId);
-            if (cachedData) { // Task 6: Hydration from cache
+            if (cachedData) {
                 try {
                     appData = JSON.parse(cachedData);
                     updateUI();
