@@ -725,7 +725,11 @@
                     appData.headerSubtitle = data.headerSubtitle;
                     // Важно: если кнопок нет, создаем пустой массив.
                     // Если кнопки есть, мы их берем, но товары будем подмешивать из allProducts
-                    appData.mainMenu = (data.mainMenu || []).map(btn => {
+                    appData.mainMenu = (data.mainMenu || []).map((btn, index) => {
+                        // ФИКС ОШИБКИ: Если у старой кнопки нет ID, назначаем ей временный ID
+                        // чтобы можно было привязывать товары. При сохранении в админке этот ID станет постоянным.
+                        if (!btn.id) btn.id = `legacy_btn_${index}`;
+
                         // Если это режим продуктов, мы очищаем items, так как они придут из products collection
                         if (btn.mode === 'products') {
                             return { ...btn, items: [] };
