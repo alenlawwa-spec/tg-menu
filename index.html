@@ -1137,11 +1137,19 @@
                     const canvas = document.getElementById('compress-canvas');
                     const ctx = canvas.getContext('2d');
                     let w = img.width, h = img.height;
-                    // ИЗМЕНЕНО: Сжатие до 800px (было 1200) для уменьшения веса
-                    if (w > 800) { h = Math.round(h * (800 / w)); w = 800; }
+                    
+                    // АГРЕССИВНОЕ СЖАТИЕ: Макс 600px по самой длинной стороне
+                    const MAX_SIDE = 600;
+                    if (w > h) {
+                        if (w > MAX_SIDE) { h = Math.round(h * (MAX_SIDE / w)); w = MAX_SIDE; }
+                    } else {
+                        if (h > MAX_SIDE) { w = Math.round(w * (MAX_SIDE / h)); h = MAX_SIDE; }
+                    }
+
                     canvas.width = w; canvas.height = h; ctx.drawImage(img, 0, 0, w, h);
-                    // ИЗМЕНЕНО: Качество 0.6 (было 0.8) для уменьшения веса
-                    callback(canvas.toDataURL('image/jpeg', 0.6));
+                    
+                    // КАЧЕСТВО 0.5 (Золотая середина для веса/качества)
+                    callback(canvas.toDataURL('image/jpeg', 0.5));
                 };
             };
         }
