@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Cyber Navigation</title>
     
     <!-- Подключение Telegram WebApp (defer для скорости) -->
@@ -12,6 +12,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
@@ -23,20 +24,20 @@
             --neon-yellow: #ffea00;
         }
 
-        html {
-            overscroll-behavior: none;
+        html, body {
+            overscroll-behavior: none !important;
+            touch-action: pan-y !important;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
         }
 
         body {
             font-family: 'Inter', sans-serif;
             background: #050505;
             color: white;
-            overflow: hidden;
-            height: 100vh;
-            width: 100vw;
             margin: 0;
-            position: fixed;
-            overscroll-behavior: none;
             -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
@@ -51,6 +52,9 @@
             -ms-user-select: text;
             user-select: text;
         }
+
+        /* UPLOAD PROGRESS STYLES - REMOVED AS REQUESTED, BUT KEEPING CSS CLASS JUST IN CASE TO NOT BREAK LAYOUT IF USED ELSEWHERE */
+        .upload-progress { display: none; }
 
         .bg-glow {
             position: fixed;
@@ -131,12 +135,15 @@
             position: absolute;
             top: 0;
             left: 0;
+            right: 0;
             width: 100%;
             height: 100%;
+            max-width: 600px;
+            margin: 0 auto;
             transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s ease;
             overflow-y: auto;
-            overscroll-behavior-y: contain; 
-            padding: 24px 20px calc(40px + env(safe-area-inset-bottom));
+            overscroll-behavior: none; /* ЖЕСТКИЙ СКРОЛЛ */
+            padding: calc(24px + env(safe-area-inset-top)) 20px calc(40px + env(safe-area-inset-bottom));
             -webkit-overflow-scrolling: touch;
             display: flex;
             flex-direction: column;
@@ -356,9 +363,10 @@
             background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 22px;
-            overflow: hidden; position: relative; display: flex; flex-direction: column;
-            transition: transform 0.2s;
+            overflow: hidden; position: relative; 
+            display: flex; flex-direction: column;
             height: 100%;
+            transition: transform 0.2s;
         }
         .product-card:active { transform: scale(0.97); }
 
@@ -371,36 +379,90 @@
             position: absolute; top: 8px; right: 8px; padding: 4px 8px;
             border-radius: 6px; font-size: 10px; font-weight: 700; text-transform: uppercase;
             backdrop-filter: blur(8px); z-index: 2; border: 1px solid rgba(255,255,255,0.1);
+            /* ПРАВКА: ОДИНАКОВЫЙ РАЗМЕР ПЛАШЕК И ЦЕНТРОВКА */
+            min-width: 80px;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
         }
         .badge-sold { background: rgba(0, 0, 0, 0.7); color: #ccc; }
         .badge-wait { background: rgba(255, 140, 0, 0.3); color: orange; border-color: orange; }
         .badge-order { background: rgba(0, 242, 255, 0.2); color: var(--neon-color); border-color: var(--neon-color); }
         
-        .product-info { padding: 12px; flex-grow: 1; display: flex; flex-direction: column; }
+        .product-info { 
+            padding: 12px; 
+            flex-grow: 1;
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; 
+        }
         
         .product-title {
             font-weight: 600; font-size: 13px; line-height: 1.3; margin-bottom: 4px; color: white;
             display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
             height: 34px;
+            flex-shrink: 0; 
         }
+        
         .product-desc-short {
-            font-size: 11px; color: #888; margin-bottom: 8px; line-height: 1.4;
-            display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
-            flex-grow: 1;
+            font-size: 11px; color: #888; line-height: 1.4;
+            /* ПРАВКА: ВЕРНУЛА ОПИСАНИЕ, ЗАДАЛА ВЫСОТУ И СКРОЛЛ */
+            display: block;
+            height: 45px; /* Фиксированная высота для 2-3 строк */
+            overflow-y: auto; /* Скролл если длиннее */
+            margin-top: 8px;
+            padding-right: 2px;
+            flex-shrink: 0;
         }
-        .price-block { margin-top: auto; display: flex; align-items: baseline; gap: 6px; }
+        .product-desc-short::-webkit-scrollbar { width: 2px; }
+        .product-desc-short::-webkit-scrollbar-thumb { background: #444; border-radius: 2px; }
+
+        .price-block { 
+            display: flex; align-items: baseline; gap: 6px;
+            flex-shrink: 0;
+            margin-top: 0;
+        }
         .price-new { color: var(--neon-color); font-weight: 700; font-size: 15px; }
         .price-old { color: #555; font-size: 11px; text-decoration: line-through; }
 
         .product-slider { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; gap: 10px; padding-bottom: 10px; }
         .product-slider::-webkit-scrollbar { display: none; }
-        .product-slide { flex: 0 0 100%; scroll-snap-align: center; border-radius: 16px; overflow: hidden; aspect-ratio: 1/1; background: #000; border: 1px solid rgba(255,255,255,0.1); }
+        
+        .product-slide { 
+            flex: 0 0 100%; 
+            scroll-snap-align: center; 
+            border-radius: 16px; 
+            overflow: hidden; 
+            aspect-ratio: 1/1; 
+            background: #000; 
+            border: 1px solid rgba(255,255,255,0.1); 
+        }
         .product-slide img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* FIX FOR TABLETS / LANDSCAPE MODE */
+        @media (orientation: landscape) {
+            #product-modal-slider {
+                display: flex;
+                justify-content: center;
+            }
+            .product-slide {
+                flex: 0 0 auto;
+                height: 50vh; /* Ограничиваем высоту фото, чтобы было место для текста */
+                width: auto;
+                aspect-ratio: 1/1;
+            }
+            .product-slide img {
+                height: 100%;
+                width: auto;
+            }
+        }
         
         #product-modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5,5,8,0.98);
             z-index: 250; display: flex; flex-direction: column; transform: translateY(100%);
-            transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); padding: 0; overflow-y: auto;
+            transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); padding: 0; overflow-y: hidden; /* ПРАВКА: Убрала скролл с контейнера */
         }
         #product-modal.active-modal { transform: translateY(0); }
 
@@ -466,29 +528,34 @@
         </div>
     </div>
 
+    <!-- ПРАВКА: ИЗМЕНЕНА СТРУКТУРА МОДАЛКИ ТОВАРА -->
     <div id="product-modal">
         <div class="relative w-full h-full flex flex-col">
             <button onclick="closeProductModal()" class="absolute top-4 right-4 z-50 w-8 h-8 bg-black/50 rounded-full text-white flex items-center justify-center backdrop-blur-md">✕</button>
             
+            <!-- Слайдер (статичен) -->
             <div class="p-4 pb-0 flex-shrink-0">
                 <div class="product-slider" id="product-modal-slider"></div>
                 <div class="text-center text-[10px] text-gray-500 mt-2">Листай фото →</div>
             </div>
 
-            <div class="flex-grow p-5 flex flex-col overflow-y-auto">
+            <!-- Заголовок и Цена (ЗАКРЕПЛЕНЫ) -->
+            <div class="p-5 pb-2 flex-shrink-0 bg-[#050508]/90 z-10">
                 <h2 id="product-modal-title" class="text-2xl font-bold text-white mb-1"></h2>
                 
-                <div class="flex items-baseline gap-3 mb-4">
+                <div class="flex items-baseline gap-3 mb-2">
                     <span id="product-modal-price" class="text-xl text-[#00f2ff] font-bold"></span>
                     <span id="product-modal-old-price" class="text-sm text-gray-500 line-through"></span>
                 </div>
-
-                <div class="w-full h-[1px] bg-white/10 mb-4"></div>
-
-                <p id="product-modal-desc" class="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap pb-20"></p>
+                <div class="w-full h-[1px] bg-white/10"></div>
             </div>
 
-            <div class="absolute bottom-0 left-0 w-full p-4 bg-gradient-to-t from-black via-black/90 to-transparent">
+            <!-- Описание (СКРОЛЛИТСЯ) -->
+            <div class="px-5 pb-20 flex-grow overflow-y-auto">
+                <p id="product-modal-desc" class="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap pt-2"></p>
+            </div>
+
+            <div class="absolute bottom-0 left-0 w-full p-4 bg-gradient-to-t from-black via-black/90 to-transparent z-20">
                 <button id="product-buy-btn" class="btn-save-cyber shadow-[0_0_20px_rgba(0,242,255,0.3)]">
                 </button>
             </div>
@@ -598,8 +665,6 @@
             { id: 'globe', svg: '<circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>' },
             { id: 'gift', svg: '<polyline points="20 12 20 22 4 22 4 12"></polyline><rect x="2" y="7" width="20" height="5"></rect><line x1="12" y1="22" x2="12" y2="7"></line><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>' },
             { id: 'award', svg: '<circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>' },
-            { id: 'vk', svg: '<path d="M15.072 2h-6.144c-4.416 0-5.928 1.512-5.928 5.928v6.144c0 4.416 1.512 5.928 5.928 5.928h6.144c4.416 0 5.928-1.512 5.928-5.928v-6.144c0-4.416-1.512-5.928-5.928-5.928zm3.048 12.456c0 .192-.096.384-.312.48-.12.048-.24.072-.36.072-.168 0-.312-.048-.456-.144-1.296-.912-2.136-2.184-3.144-3.336-.072-.096-.168-.168-.288-.168-.144 0-.24.096-.24.264v2.376c0 .504-.264.768-.744.768h-1.008c-2.424 0-4.56-1.68-6.12-4.08-.144-.24-.192-.48-.192-.72 0-.48.24-.744.744-.744h1.44c.312 0 .528.144.648.432.552 1.344 1.296 2.496 2.16 3.48.096.096.192.144.288.144.12 0 .216-.096.216-.24v-1.728c0-.72-.288-1.008-.888-1.128-.192-.048-.288-.144-.288-.312 0-.192.168-.384.456-.432.48-.072 1.224-.096 1.848-.096.504 0 .768.216.768.744v2.016c0 .168.096.264.24.264.12 0 .216-.072.288-.168 1.008-1.152 1.752-2.424 2.16-3.792.072-.216.24-.336.528-.336h1.56c.456 0 .72.264.72.72 0 .216-.048.456-.192.696-.648 1.344-1.536 2.568-2.616 3.6-.144.12-.192.264-.192.408 0 .144.072.288.192.384 1.128.816 2.064 1.968 2.664 3.336.072.168.12.336.12.504z" fill="currentColor"/>' }, 
-            { id: 'rutube', svg: '<path d="M12.012 2c-5.523 0-10 4.477-10 10s4.477 10 10 10 10-4.477 10-10-4.477-10-10-10zm4.86 11.235c-.09.39-.435.675-.84.675h-8.025c-.405 0-.75-.285-.84-.675l-1.05-4.5c-.12-.51.27-.975.795-.975h9.99c.525 0 .915.465.795.975l-1.05 4.5z" fill="currentColor"/>' }, 
             { id: 'shopping-bag', svg: '<path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path>' } 
         ];
 
@@ -626,6 +691,7 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
+        // const storage = firebase.storage(); // ОТКЛЮЧЕНО ПО ТРЕБОВАНИЮ
         
         auth.signInAnonymously()
           .then(() => {
@@ -850,9 +916,10 @@
             items.forEach((item) => {
                 const itemEl = document.createElement('div');
                 itemEl.className = 'gallery-item cursor-pointer animate-pulse-enter';
-                itemEl.onclick = () => openGalleryModal(item.imageUrl, item.prompt);
+                const imgUrl = (item.images && item.images.length > 0) ? item.images[0] : item.imageUrl;
+                itemEl.onclick = () => openGalleryModal(imgUrl, item.prompt);
                 const overlay = item.title ? `<div class="gallery-overlay pointer-events-none"><div class="text-white text-xs font-semibold truncate">${escapeHtml(item.title)}</div></div>` : '';
-                itemEl.innerHTML = `<img src="${item.imageUrl}" data-tg-link="${item.tgLink || ''}" class="gallery-img" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="tryRepairImage(this)">${overlay}`;
+                itemEl.innerHTML = `<img src="${imgUrl}" data-tg-link="${item.tgLink || ''}" class="gallery-img" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="tryRepairImage(this)">${overlay}`;
                 container.appendChild(itemEl);
             });
         }
@@ -866,6 +933,16 @@
             'open': { label: 'Запись открыта', class: 'badge-order' },
             'empty': { label: 'Пусто', class: 'badge-sold' }
         };
+        
+        // ПРАВКА: ЦВЕТА ДЛЯ ПЛАШЕК
+        const BADGE_COLORS = {
+            'red': { bg: '#ff4d4d', color: '#fff', border: '#ff4d4d' },
+            'green': { bg: '#39ff14', color: '#000', border: '#39ff14' },
+            'blue': { bg: '#0066ff', color: '#fff', border: '#0066ff' },
+            'white': { bg: '#ffffff', color: '#000', border: '#ffffff' },
+            'yellow': { bg: '#ffea00', color: '#000', border: '#ffea00' },
+            'cyan': { bg: '#00f2ff', color: '#000', border: '#00f2ff' }
+        };
 
         function renderProductItems(items, container) {
             container.innerHTML = '';
@@ -875,7 +952,23 @@
                 card.onclick = () => openProductModal(item);
 
                 const statusData = STATUS_MAP[item.status];
-                const badgeHtml = statusData ? `<div class="product-badge ${statusData.class}">${statusData.label}</div>` : '';
+                
+                // ПРАВКА: ЛОГИКА ПЛАШКИ С ЦВЕТОМ
+                let badgeHtml = '';
+                if (statusData) {
+                    let styleAttr = '';
+                    if (item.badgeColor && BADGE_COLORS[item.badgeColor]) {
+                        const c = BADGE_COLORS[item.badgeColor];
+                        styleAttr = `style="background: ${c.bg}; color: ${c.color}; border-color: ${c.border};"`;
+                    } else {
+                        // Если цвет не выбран, берем класс из карты
+                        styleAttr = `class="product-badge ${statusData.class}"`;
+                    }
+                    // Если цвет выбран, класс product-badge всё равно нужен для базы
+                    if (styleAttr.startsWith('style')) styleAttr = `class="product-badge" ` + styleAttr;
+                    
+                    badgeHtml = `<div ${styleAttr}>${statusData.label}</div>`;
+                }
                 
                 let priceHtml = `<div class="price-block"><span class="price-new">${item.price}</span></div>`;
                 if(item.oldPrice) priceHtml = `<div class="price-block"><span class="price-new">${item.price}</span><span class="price-old">${item.oldPrice}</span></div>`;
@@ -887,8 +980,8 @@
                     <img src="${mainImg || 'https://placehold.co/400'}" class="product-image" loading="lazy">
                     <div class="product-info">
                         <div class="product-title">${escapeHtml(item.title)}</div>
-                        <div class="product-desc-short">${escapeHtml(item.description)}</div>
                         ${priceHtml}
+                        <div class="product-desc-short">${escapeHtml(item.description)}</div>
                     </div>
                 `;
                 container.appendChild(card);
@@ -1040,9 +1133,10 @@
                 const upBtn = idx > 0 ? `<button onclick="moveMainMenuButton(${idx}, -1)" class="px-2 text-gray-500 hover:text-cyan-400 transition">▲</button>` : `<span class="px-2 opacity-0">▲</span>`;
                 const downBtn = idx < total - 1 ? `<button onclick="moveMainMenuButton(${idx}, 1)" class="px-2 text-gray-500 hover:text-cyan-400 transition">▼</button>` : `<span class="px-2 opacity-0">▼</span>`;
 
+                // ПРАВКА: ИСПРАВЛЕНЫ НАЗВАНИЯ "BUTTON" НА "БЛОК"
                 div.innerHTML = `
                     <div class="flex justify-between items-center mb-4">
-                        <span class="text-[10px] text-cyan-400">BUTTON ${idx+1}</span>
+                        <span class="text-[10px] text-cyan-400">БЛОК ${idx+1}</span>
                         <div class="flex items-center">
                              ${upBtn}
                              ${downBtn}
@@ -1117,35 +1211,87 @@
         }
 
         function compressImage(file, callback) {
-            const reader = new FileReader(); reader.readAsDataURL(file);
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
             reader.onload = event => {
-                const img = new Image(); img.src = event.target.result;
+                const img = new Image();
+                img.src = event.target.result;
                 img.onload = () => {
                     const canvas = document.getElementById('compress-canvas');
                     const ctx = canvas.getContext('2d');
                     let w = img.width, h = img.height;
-                    if (w > 800) { h = Math.round(h * (800 / w)); w = 800; }
-                    canvas.width = w; canvas.height = h; ctx.drawImage(img, 0, 0, w, h);
-                    callback(canvas.toDataURL('image/jpeg', 0.6));
+                    const MAX_SIDE = 800; // Требование: не больше 800px
+                    if (w > h) {
+                        if (w > MAX_SIDE) { h = Math.round(h * (MAX_SIDE / w)); w = MAX_SIDE; }
+                    } else {
+                        if (h > MAX_SIDE) { w = Math.round(w * (MAX_SIDE / h)); h = MAX_SIDE; }
+                    }
+                    canvas.width = w; canvas.height = h;
+                    ctx.drawImage(img, 0, 0, w, h);
+                    
+                    // Требование: качество 0.7
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                    callback(dataUrl);
                 };
             };
         }
 
         function handleFileUpload(input, idx) {
-            const file = input.files[0]; if (!file) return;
+            const file = input.files[0]; 
+            if (!file) return;
+
+            // UI: Просто блокируем кнопки, как просили (убрал прогресс-бар)
+            const btnGlobal = document.getElementById('btn-save-global');
+            const btnSub = document.getElementById('btn-save-sub');
+            if(btnGlobal) { btnGlobal.disabled = true; btnGlobal.innerText = "⏳ Обработка..."; }
+            if(btnSub) { btnSub.disabled = true; btnSub.innerText = "⏳ Обработка..."; }
+
             compressImage(file, (base64) => {
-                if (base64.length > 700000) { alert("Картинка слишком большая"); return; }
                 const mode = tempAppData.mainMenu[currentEditingIndex].mode;
-                if (mode === 'products') {
-                    const slot = input.dataset.slot;
-                    if (!tempAppData.mainMenu[currentEditingIndex].items[idx].images) tempAppData.mainMenu[currentEditingIndex].items[idx].images = [];
-                    while(tempAppData.mainMenu[currentEditingIndex].items[idx].images.length <= slot) tempAppData.mainMenu[currentEditingIndex].items[idx].images.push('');
+                const slot = input.dataset.slot;
+
+                if (mode === 'products' || mode === 'gallery') {
+                    if (!tempAppData.mainMenu[currentEditingIndex].items[idx].images) 
+                        tempAppData.mainMenu[currentEditingIndex].items[idx].images = [];
+                    
+                    while(tempAppData.mainMenu[currentEditingIndex].items[idx].images.length <= slot) 
+                        tempAppData.mainMenu[currentEditingIndex].items[idx].images.push('');
+                    
+                    // Сохраняем Base64 прямо в структуру
                     tempAppData.mainMenu[currentEditingIndex].items[idx].images[slot] = base64;
+                    
+                    if(mode === 'gallery' && slot == 0) 
+                        tempAppData.mainMenu[currentEditingIndex].items[idx].imageUrl = base64;
                 } else {
                     tempAppData.mainMenu[currentEditingIndex].items[idx].imageUrl = base64;
                 }
-                renderSubListItems();
+
+                // Показываем превью сразу
+                input.parentElement.style.backgroundImage = `url('${base64}')`;
+
+                // Разблокируем через 1 сек
+                setTimeout(() => {
+                    if(btnGlobal) { btnGlobal.disabled = false; btnGlobal.innerText = "💾 Сохранить изменения"; }
+                    if(btnSub) { btnSub.disabled = false; btnSub.innerText = "💾 Сохранить изменения"; renderSubListItems(); }
+                }, 1000);
             });
+        }
+        
+        // ПРАВКА: НОВАЯ ФУНКЦИЯ УДАЛЕНИЯ ФОТО
+        function removeImage(itemIdx, imgSlot) {
+            if(confirm('Удалить фото?')) {
+                const item = tempAppData.mainMenu[currentEditingIndex].items[itemIdx];
+                if(item.images && item.images[imgSlot]) {
+                     item.images[imgSlot] = '';
+                     // Если удаляем главное фото галереи (слот 0), чистим и imageUrl
+                     if(tempAppData.mainMenu[currentEditingIndex].mode === 'gallery' && imgSlot === 0) {
+                         item.imageUrl = '';
+                     }
+                } else if (imgSlot === 0) {
+                    item.imageUrl = '';
+                }
+                renderSubListItems();
+            }
         }
 
         function addNewGlobalCategory() {
@@ -1178,11 +1324,16 @@
                     let previews = '';
                     for(let i=0; i<3; i++) {
                         const bg = images[i] ? `background-image: url('${images[i]}')` : '';
-                        previews += `<div class="relative w-16 h-16 bg-black/40 border border-white/20 rounded flex items-center justify-center overflow-hidden bg-cover bg-center" style="${bg}"><input type="file" data-slot="${i}" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer" onchange="handleFileUpload(this, ${idx})">${!images[i]?'<span class="text-xs opacity-50">+</span>':''}</div>`;
+                        // ПРАВКА: ДОБАВЛЕН КРЕСТИК УДАЛЕНИЯ (КРАСНАЯ КНОПКА)
+                        const deleteBtn = images[i] ? `<button onclick="removeImage(${idx}, ${i})" class="absolute top-0 right-0 bg-red-500/80 text-white w-5 h-5 flex items-center justify-center rounded-bl-lg hover:bg-red-600 transition z-20">×</button>` : '';
+                        previews += `<div class="relative w-16 h-16 bg-black/40 border border-white/20 rounded flex items-center justify-center overflow-hidden bg-cover bg-center" style="${bg}">${deleteBtn}<input type="file" data-slot="${i}" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer" onchange="handleFileUpload(this, ${idx})">${!images[i]?'<span class="text-xs opacity-50">+</span>':''}</div>`;
                     }
+                    
+                    // ПРАВКА: ТЕХНИЧЕСКОЕ НАЗВАНИЕ "ITEM" ЗАМЕНЕНО НА "ТОВАР"
+                    // ПРАВКА: ДОБАВЛЕН ВЫБОР ЦВЕТА ПЛАШКИ
                     div.innerHTML = `
                         <div class="flex justify-between items-start mb-2">
-                             <span class="text-[10px] text-purple-400 font-bold">ITEM ${idx+1}</span>
+                             <span class="text-[10px] text-purple-400 font-bold">ТОВАР ${idx+1}</span>
                              <div class="flex gap-2">
                                 ${upBtn} ${downBtn}
                                 <button onclick="tempAppData.mainMenu[${currentEditingIndex}].items.splice(${idx},1); renderSubListItems();" class="text-red-500 px-2">✕</button>
@@ -1193,36 +1344,68 @@
                         <div class="flex gap-2"><input type="text" class="admin-input" value="${item.price||''}" placeholder="Цена" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].price=this.value"><input type="text" class="admin-input" value="${item.oldPrice||''}" placeholder="Старая цена" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].oldPrice=this.value"></div>
                         <textarea class="admin-textarea h-16" placeholder="Краткое описание" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].description=this.value">${item.description||''}</textarea>
                         <textarea class="admin-textarea h-24" placeholder="Полное описание" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].fullDescription=this.value">${item.fullDescription||''}</textarea>
-                        <select class="admin-select" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].status=this.value">
-                            <option value="" ${!item.status?'selected':''}>В наличии (Без плашки)</option>
-                            <option value="sold" ${item.status==='sold'?'selected':''}>Продано</option>
-                            <option value="wait" ${item.status==='wait'?'selected':''}>Ожидается</option>
-                            <option value="order" ${item.status==='order'?'selected':''}>Под заказ</option>
-                            <option value="noseats" ${item.status==='noseats'?'selected':''}>Мест нет</option>
-                            <option value="soon" ${item.status==='soon'?'selected':''}>Скоро старт</option>
-                            <option value="open" ${item.status==='open'?'selected':''}>Запись открыта</option>
-                            <option value="empty" ${item.status==='empty'?'selected':''}>Пусто</option>
-                        </select>
+                        
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="admin-label">Статус</label>
+                                <select class="admin-select" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].status=this.value">
+                                    <option value="" ${!item.status?'selected':''}>Обычный</option>
+                                    <option value="sold" ${item.status==='sold'?'selected':''}>Продано</option>
+                                    <option value="wait" ${item.status==='wait'?'selected':''}>Ожидается</option>
+                                    <option value="order" ${item.status==='order'?'selected':''}>Под заказ</option>
+                                    <option value="noseats" ${item.status==='noseats'?'selected':''}>Мест нет</option>
+                                    <option value="soon" ${item.status==='soon'?'selected':''}>Скоро старт</option>
+                                    <option value="open" ${item.status==='open'?'selected':''}>Запись открыта</option>
+                                    <option value="empty" ${item.status==='empty'?'selected':''}>Пусто</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="admin-label">Цвет плашки</label>
+                                <select class="admin-select" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].badgeColor=this.value">
+                                    <option value="" ${!item.badgeColor?'selected':''}>Стандарт</option>
+                                    <option value="red" ${item.badgeColor==='red'?'selected':''}>🔴 Красный</option>
+                                    <option value="green" ${item.badgeColor==='green'?'selected':''}>🟢 Зеленый</option>
+                                    <option value="blue" ${item.badgeColor==='blue'?'selected':''}>🔵 Синий</option>
+                                    <option value="white" ${item.badgeColor==='white'?'selected':''}>⚪ Белый</option>
+                                    <option value="yellow" ${item.badgeColor==='yellow'?'selected':''}>🟡 Желтый</option>
+                                    <option value="cyan" ${item.badgeColor==='cyan'?'selected':''}>💠 Голубой</option>
+                                </select>
+                            </div>
+                        </div>
+
                         <input type="text" class="admin-input" value="${item.buttonText||'Купить'}" placeholder="Текст кнопки" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].buttonText=this.value">
                         <input type="text" class="admin-input" value="${item.buttonLink||''}" placeholder="TG Username" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].buttonLink=this.value">
                     `;
                 } else if (parentBtn.mode === 'gallery') {
                      let opts = '<option value="">Без категории</option>';
                      Array.from(availableCategories).sort().forEach(cat => opts += `<option value="${cat}" ${item.category===cat?'selected':''}>${cat}</option>`);
+                     
+                     const images = item.images || (item.imageUrl ? [item.imageUrl] : []);
+                     let previews = '';
+                     for(let i=0; i<3; i++) {
+                        const bg = images[i] ? `background-image: url('${images[i]}')` : '';
+                        // ПРАВКА: ДОБАВЛЕН КРЕСТИК УДАЛЕНИЯ (КРАСНАЯ КНОПКА)
+                        const deleteBtn = images[i] ? `<button onclick="removeImage(${idx}, ${i})" class="absolute top-0 right-0 bg-red-500/80 text-white w-5 h-5 flex items-center justify-center rounded-bl-lg hover:bg-red-600 transition z-20">×</button>` : '';
+                        previews += `<div class="relative w-16 h-16 bg-black/40 border border-white/20 rounded flex items-center justify-center overflow-hidden bg-cover bg-center" style="${bg}">${deleteBtn}<input type="file" data-slot="${i}" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer" onchange="handleFileUpload(this, ${idx})">${!images[i]?'<span class="text-xs opacity-50">+</span>':''}</div>`;
+                     }
+
                      div.innerHTML = `
                         <div class="flex justify-between items-start mb-2">
-                             <span class="text-[10px] font-bold">SLIDE ${idx+1}</span>
+                             <span class="text-[10px] font-bold">СЛАЙД ${idx+1}</span>
                              <div class="flex gap-2">
                                 ${upBtn} ${downBtn}
                                 <button onclick="tempAppData.mainMenu[${currentEditingIndex}].items.splice(${idx},1); renderSubListItems();" class="text-red-500 px-2">✕</button>
                              </div>
                         </div>
-                        <div class="bg-white/5 p-2 rounded mb-2"><label class="admin-label">Magic Paste</label><div class="flex gap-2"><textarea id="magic-paste-${idx}" class="admin-input h-8 mb-0"></textarea><button id="btn-magic-${idx}" onclick="magicPaste(${idx})" class="magic-btn">OK</button></div></div>
-                        <input type="file" accept="image/*" class="text-xs text-gray-400 w-full mb-2" onchange="handleFileUpload(this, ${idx})">
-                        ${item.imageUrl ? `<img src="${item.imageUrl}" class="w-20 h-20 object-cover rounded mb-2">` : ''}
-                        <input type="text" class="admin-input" value="${item.title||''}" placeholder="Заголовок" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].title=this.value">
+                        
+                        <div class="mb-3">
+                            <label class="admin-label mb-2">Фото</label>
+                            <div class="flex gap-2">${previews}</div>
+                        </div>
+
+                        <input type="text" class="admin-input" value="${item.title||''}" placeholder="Заголовок (необязательно)" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].title=this.value">
                         <select class="admin-select" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].category=this.value">${opts}</select>
-                        <textarea id="prompt-area-${idx}" class="admin-textarea" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].prompt=this.value">${item.prompt||''}</textarea>
+                        <textarea id="prompt-area-${idx}" class="admin-textarea" placeholder="Промпт..." onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].prompt=this.value">${item.prompt||''}</textarea>
                      `;
                 } else {
                      div.innerHTML = `
@@ -1248,32 +1431,6 @@
                 [list[index], list[newIndex]] = [list[newIndex], list[index]];
                 renderSubListItems();
             }
-        }
-
-        function magicPaste(itemIdx) {
-            const btn = document.getElementById(`btn-magic-${itemIdx}`);
-            btn.disabled = true; btn.innerText = "⏳";
-            const raw = document.getElementById(`magic-paste-${itemIdx}`).value.trim();
-            const tgLink = raw.match(/(https:\/\/t\.me\/[\w\/]+)/)?.[0];
-            
-            if (!tgLink) { btn.disabled=false; btn.innerText="ERR"; return; }
-            
-            fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(tgLink + '?embed=1&mode=tme'))
-            .then(r => r.json())
-            .then(data => {
-                const doc = new DOMParser().parseFromString(data.contents, "text/html");
-                const style = doc.querySelector('.tgme_widget_message_photo_wrap')?.getAttribute('style');
-                const img = style?.match(/url\('?(.*?)'?\)/)?.[1];
-                let text = doc.querySelector('.tgme_widget_message_text blockquote')?.innerText.trim() 
-                         || doc.querySelector('.tgme_widget_message_text')?.innerText.trim();
-                
-                if (img) tempAppData.mainMenu[currentEditingIndex].items[itemIdx].imageUrl = img;
-                if (text) tempAppData.mainMenu[currentEditingIndex].items[itemIdx].prompt = text;
-                tempAppData.mainMenu[currentEditingIndex].items[itemIdx].tgLink = tgLink;
-                
-                renderSubListItems();
-                btn.disabled=false; btn.innerText = "OK";
-            }).catch(() => { btn.disabled=false; btn.innerText = "ERR"; });
         }
 
         function addNewSubItem() {
@@ -1305,12 +1462,27 @@
 
             try {
                 // ЯВНО УКАЗЫВАЕМ ID АДМИНА
-                const HARDCODED_ADMIN_ID = 758556732; 
                 const secureData = {
-                    adminId: HARDCODED_ADMIN_ID, // <--- ЭТО КЛЮЧ ДЛЯ FIREBASE
+                    admin_id: ADMIN_ID, // ИСПРАВЛЕНО: поле admin_id (snake_case)
                     ...tempAppData,
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 };
+
+                // --- ЗАЩИТА ОТ ПЕРЕПОЛНЕНИЯ (НОВАЯ ЛОГИКА) ---
+                // Проверяем примерный размер JSON-строки
+                const dataString = JSON.stringify(secureData);
+                // ПРАВКА: УВЕЛИЧЕН ЛИМИТ ДО 1МБ (1,000,000)
+                if (dataString.length > 1000000) { 
+                    tg.showAlert("Фото всё ещё слишком большое, выбери другое!");
+                    btns.forEach(b => { 
+                        b.disabled = false; 
+                        b.innerText = "Превышен лимит размера!"; 
+                        b.style.background = "#ff4d4d"; 
+                    });
+                    return; // Прерываем сохранение
+                }
+                // ----------------------------------------------
+
                 console.log("Отправляю данные:", secureData); // Для отладки
                 // Сохраняем с merge, чтобы не затереть лишнее
                 const savePromise = db.collection('configs').doc(configDocId).set(secureData, { merge: true });
@@ -1328,7 +1500,7 @@
                 document.getElementById('save-status').style.opacity = '1';
                 setTimeout(() => { 
                     document.getElementById('save-status').style.opacity = '0'; 
-                    closeAdmin();
+                    // ПРАВКА: УБРАНО closeAdmin() - ТЕПЕРЬ АДМИНКА НЕ ЗАКРЫВАЕТСЯ АВТОМАТИЧЕСКИ
                     btns.forEach(b => { b.disabled = false; b.innerText = "💾 Сохранить изменения"; b.style.background = ""; });
                 }, 1500);
 
@@ -1355,7 +1527,12 @@
                 if(snap.empty) { list.innerHTML = '<div class="text-center text-gray-500 mt-4">Пусто</div>'; return; }
                 
                 const docs = [];
-                snap.forEach(d => { let obj = d.data(); obj.id = d.id; docs.push(obj); });
+                snap.forEach(d => { 
+                    let obj = d.data(); 
+                    if(obj.deleted) return; // Фильтруем удаленные
+                    obj.id = d.id; 
+                    docs.push(obj); 
+                });
                 
                 docs.sort((a,b) => new Date(b.date) - new Date(a.date));
                 
@@ -1397,8 +1574,17 @@
                 }
             });
         }
-        function approveReview(id) { db.collection('reviews').doc(id).update({ approved: true }).then(() => { tg.showAlert("Одобрено"); loadModerationList(); }); }
-        function deleteReview(id) { if(confirm('Удалить?')) db.collection('reviews').doc(id).delete().then(loadModerationList); }
+        function approveReview(id) { db.collection('reviews').doc(id).update({ approved: true, admin_id: ADMIN_ID }).then(() => { tg.showAlert("Одобрено"); loadModerationList(); }); }
+        
+        // ИСПРАВЛЕНО: Заменили delete() на update() (Soft Delete) для передачи admin_id
+        function deleteReview(id) { 
+            if(confirm('Удалить?')) {
+                db.collection('reviews').doc(id).update({ 
+                    deleted: true, 
+                    admin_id: ADMIN_ID 
+                }).then(loadModerationList); 
+            }
+        }
 
     </script>
 </body>
