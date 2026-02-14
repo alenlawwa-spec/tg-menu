@@ -1392,13 +1392,21 @@
                     createdAt: new Date().toISOString()
                 };
                 
+                // FIX: Сразу добавляем в локальный список для мгновенного отображения
+                const tempItem = { ...newProduct, _docId: null };
+                tempAppData.mainMenu[currentEditingIndex].items.unshift(tempItem);
+                renderSubListItems();
+
                 // Добавляем в коллекцию products
                 db.collection('products').add(newProduct)
-                  .then(() => {
+                  .then((docRef) => {
                       tg.showAlert("Товар создан! Можете редактировать.");
-                      // Примечание: onSnapshot сработает автоматически и обновит UI,
-                      // но так как мы в админке, нам надо перерисовать список
-                      // Мы это делаем через listener в initAppLogic, который вызывает mergeProductsIntoMenu
+                      // Обновляем ID у локального элемента, если снапшот еще не пришел
+                      const item = tempAppData.mainMenu[currentEditingIndex].items[0];
+                      if (item && !item._docId) {
+                          item._docId = docRef.id;
+                          renderSubListItems();
+                      }
                   });
             } else {
                 // ДЛЯ ОСТАЛЬНЫХ: Просто в массив
