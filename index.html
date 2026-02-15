@@ -284,12 +284,18 @@
         }
         .gallery-item:active { transform: scale(0.96); }
         .gallery-img { width: 100%; height: 100%; object-fit: cover; object-position: center; will-change: opacity; }
+        
+        /* FIX: GRID OVERLAY (Left align, bottom) */
         .gallery-overlay {
-            position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,0.95), transparent);
-            padding: 10px; display: flex; flex-direction: column; justify-content: flex-end; 
+            position: absolute; bottom: 0; left: 0; right: 0; 
+            background: linear-gradient(to top, rgba(0,0,0,0.95), transparent);
+            padding: 12px; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: flex-end; /* Push content to bottom */
             height: 60%;
-            align-items: center; /* CENTER TITLE IN GRID */
-            text-align: center; /* CENTER TITLE IN GRID */
+            align-items: flex-start; /* Left align items */
+            text-align: left; /* Left align text */
         }
 
         #gallery-modal {
@@ -491,21 +497,22 @@
 
         /* Кнопка "ПОДРОБНЕЕ" */
         .btn-more-details {
-            margin-top: auto;
+            margin-top: 4px; /* Space above button in grid */
             background: rgba(0, 242, 255, 0.05);
-            border: 1px solid rgba(0, 242, 255, 0.3);
+            border: 1px solid rgba(0, 242, 255, 0.5); /* Neon border visible */
             color: var(--neon-color);
             font-size: 9px;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 1.5px;
-            padding: 8px 0;
+            padding: 6px 10px;
             border-radius: 8px;
-            width: 100%;
+            width: auto;
             text-align: center;
             transition: all 0.2s;
             backdrop-filter: blur(4px);
             cursor: pointer;
+            display: inline-block;
         }
         .btn-more-details:active {
             background: rgba(0, 242, 255, 0.15);
@@ -525,7 +532,7 @@
             height: 130px;
             position: relative;
             transition: transform 0.2s;
-            padding: 0 !important; /* FIX: Remove any default padding */
+            padding: 0 !important;
         }
         .list-item:active { transform: scale(0.98); }
         
@@ -533,11 +540,11 @@
             width: 35%;
             height: 100%;
             object-fit: cover;
-            object-position: center;
+            object-position: top; /* FIX: Top align heads */
             border-right: 1px solid rgba(255,255,255,0.05);
             flex-shrink: 0;
-            display: block; /* FIX: Remove inline spacing */
-            margin: 0 !important; /* FIX: Remove margin */
+            display: block; 
+            margin: 0 !important; 
         }
         
         .list-item-content {
@@ -556,8 +563,9 @@
         
         .list-item-desc {
             font-size: 10px; color: #888; line-height: 1.3;
-            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+            display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
             margin-bottom: 8px;
+            padding-right: 10px; /* Space for scrollbar if any */
         }
 
         .list-item-footer {
@@ -1062,7 +1070,7 @@
                         <div class="list-item-content">
                             <div class="list-item-title">${escapeHtml(item.title || 'Без названия')}</div>
                             <div class="list-item-desc">${escapeHtml(item.prompt || 'Нет описания')}</div>
-                            <button class="btn-more-details">ОТКРЫТЬ</button>
+                            <button class="btn-more-details absolute bottom-3 right-3 w-auto px-3 py-1 text-[10px]">ПОДРОБНЕЕ</button>
                         </div>
                      `;
                      container.appendChild(itemEl);
@@ -1072,13 +1080,13 @@
                     itemEl.className = 'gallery-item cursor-pointer';
                     itemEl.onclick = () => openGalleryModal(imgUrl, item.prompt);
                     
-                    const titleText = item.title ? `<div class="text-white text-xs font-semibold truncate mb-1">${escapeHtml(item.title)}</div>` : '';
+                    const titleText = item.title ? `<div class="text-white text-xs font-semibold truncate mb-1 text-left w-full">${escapeHtml(item.title)}</div>` : '';
                     
                     itemEl.innerHTML = `
                         <img src="${imgUrl}" data-tg-link="${item.tgLink || ''}" class="gallery-img" referrerpolicy="no-referrer" loading="lazy" decoding="async" onerror="tryRepairImage(this)">
                         <div class="gallery-overlay pointer-events-none">
                             ${titleText}
-                            <div class="btn-more-details">ПОДРОБНЕЕ</div>
+                            <div class="btn-more-details mt-1">ПОДРОБНЕЕ</div>
                         </div>
                     `;
                     container.appendChild(itemEl);
@@ -1125,12 +1133,11 @@
                 }
 
                 if (viewType === 'list') {
-                    // LIST VIEW
+                    // LIST VIEW (FIXED)
                     const card = document.createElement('div');
                     card.className = 'list-item cursor-pointer';
                     card.onclick = () => openProductModal(item);
                     
-                    // Плашка в списке будет меньше или поверх фото
                     const listBadge = badgeHtml ? badgeHtml.replace('product-badge', 'product-badge scale-75 origin-top-right') : '';
 
                     card.innerHTML = `
@@ -1139,18 +1146,16 @@
                              <img src="${mainImg || 'https://placehold.co/400'}" class="list-item-img w-full h-full" loading="lazy">
                         </div>
                         <div class="list-item-content">
-                            <div>
-                                <div class="list-item-title">${escapeHtml(item.title)}</div>
-                                <div class="list-item-desc">${escapeHtml(item.description)}</div>
-                            </div>
-                            <!-- FIX: Use standard button styling in list footer or absolute -->
-                            <button class="btn-more-details">ПОДРОБНЕЕ</button>
+                            <div class="list-item-title">${escapeHtml(item.title)}</div>
+                            ${item.price ? `<div class="text-[#00f2ff] font-bold text-xs mb-1">${item.price}</div>` : ''}
+                            <div class="list-item-desc">${escapeHtml(item.description)}</div>
+                            <button class="btn-more-details absolute bottom-3 right-3 w-auto px-3 py-1 text-[10px]">ПОДРОБНЕЕ</button>
                         </div>
                     `;
                     container.appendChild(card);
 
                 } else {
-                    // GRID VIEW (Original)
+                    // GRID VIEW (FIXED)
                     const card = document.createElement('div');
                     card.className = 'product-card cursor-pointer';
                     card.onclick = () => openProductModal(item);
@@ -1165,7 +1170,7 @@
                             <div class="product-title">${escapeHtml(item.title)}</div>
                             ${priceHtml}
                             <div class="product-desc-short">${escapeHtml(item.description)}</div>
-                            <button class="btn-more-details">ПОДРОБНЕЕ</button>
+                            <button class="btn-more-details w-full mt-2">ПОДРОБНЕЕ</button>
                         </div>
                     `;
                     container.appendChild(card);
