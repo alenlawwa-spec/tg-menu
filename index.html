@@ -551,22 +551,21 @@
             margin-top: 2px;
         }
 
-        /* ADMIN STICKY BAR CSS */
+        /* ADMIN STICKY BAR CSS - FIXED */
         #admin-sticky-bar {
-            position: fixed;
-            bottom: 0;
+            position: fixed !important;
+            bottom: 0 !important;
             left: 0;
             right: 0;
-            z-index: 9999;
-            background: rgba(10, 10, 10, 0.85); /* Темный фон */
-            backdrop-filter: blur(15px); /* Эффект матового стекла */
+            z-index: 99999;
+            background: rgba(10, 10, 10, 0.9);
+            backdrop-filter: blur(15px);
             -webkit-backdrop-filter: blur(15px);
-            border-top: 1px solid rgba(0, 242, 255, 0.3); /* Тонкая неоновая линия сверху */
+            border-top: 1px solid rgba(0, 242, 255, 0.4);
             padding: 12px 16px;
-            padding-bottom: calc(12px + env(safe-area-inset-bottom)); /* Учет челки снизу на iPhone */
+            padding-bottom: calc(12px + env(safe-area-inset-bottom));
             display: flex;
             gap: 10px;
-            justify-content: space-between;
         }
 
     </style>
@@ -720,12 +719,12 @@
              <div class="admin-section-title text-yellow-400">Модерация отзывов</div>
              <div id="moderation-list" class="space-y-4 pb-32"></div>
         </div>
-
-        <!-- NEW STICKY BAR -->
-        <div id="admin-sticky-bar" class="hidden"></div>
         
         <div id="save-status" class="text-center text-xs text-cyan-400 mt-4 opacity-0 transition-opacity font-mono absolute bottom-20 left-0 right-0 pointer-events-none">DB_SYNC_COMPLETE</div>
     </div>
+
+    <!-- MOVED STICKY BAR OUTSIDE ADMIN PAGE FOR TRUE FIXED POSITIONING -->
+    <div id="admin-sticky-bar" class="hidden"></div>
 
     <canvas id="compress-canvas" style="display: none;"></canvas>
 
