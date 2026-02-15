@@ -1472,7 +1472,8 @@
 
         function addNewSubItem() {
             const mode = tempAppData.mainMenu[currentEditingIndex].mode;
-            const newItem = mode === 'products' ? { title: 'Товар', price: '', status: '', images: [] } : { title: 'Новый', link: '' };
+            const newId = 'item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            const newItem = mode === 'products' ? { id: newId, title: 'Товар', price: '', status: '', images: [] } : { id: newId, title: 'Новый', link: '' };
             tempAppData.mainMenu[currentEditingIndex].items.unshift(newItem);
             renderSubListItems();
         }
@@ -1519,6 +1520,7 @@
                             
                             // Добавляем ссылку на родителя
                             item.parentId = btn.id;
+                            item.admin_id = ADMIN_ID; 
 
                             // Добавляем в промисы сохранение отдельного документа
                             savePromises.push(
