@@ -286,7 +286,10 @@
         .gallery-img { width: 100%; height: 100%; object-fit: cover; object-position: center; will-change: opacity; }
         .gallery-overlay {
             position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,0.95), transparent);
-            padding: 10px; display: flex; flex-direction: column; justify-content: flex-end; height: 60%;
+            padding: 10px; display: flex; flex-direction: column; justify-content: flex-end; 
+            height: 60%;
+            align-items: center; /* CENTER TITLE IN GRID */
+            text-align: center; /* CENTER TITLE IN GRID */
         }
 
         #gallery-modal {
@@ -522,6 +525,7 @@
             height: 130px;
             position: relative;
             transition: transform 0.2s;
+            padding: 0 !important; /* FIX: Remove any default padding */
         }
         .list-item:active { transform: scale(0.98); }
         
@@ -532,6 +536,8 @@
             object-position: center;
             border-right: 1px solid rgba(255,255,255,0.05);
             flex-shrink: 0;
+            display: block; /* FIX: Remove inline spacing */
+            margin: 0 !important; /* FIX: Remove margin */
         }
         
         .list-item-content {
@@ -559,6 +565,17 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+        }
+
+        /* FIX: Button in list view at bottom right */
+        .list-item-content .btn-more-details {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            width: auto;
+            margin: 0;
+            padding: 6px 12px;
+            font-size: 10px;
         }
 
     </style>
@@ -820,6 +837,7 @@
         }
 
         function initAppLogic() {
+            // First load attempt from cache
             const cachedData = localStorage.getItem('cyber_nav_cache_' + configDocId);
             if (cachedData) {
                 try {
@@ -837,6 +855,7 @@
 
                 if (doc.exists) {
                     appData = doc.data();
+                    // IMPORTANT: We only use the structure from config, content is loaded separately
                     await loadHeavyContent();
                     
                     localStorage.setItem('cyber_nav_cache_' + configDocId, JSON.stringify(appData));
@@ -860,6 +879,8 @@
                             item.id = d.id;
                             items.push(item);
                         });
+                        // STRICT OVERWRITE: We completely ignore whatever was in appData.mainMenu[i].items
+                        // This prevents "zombie" items from the config file appearing
                         btn.items = items;
                     } catch (e) {
                         console.error(`Error loading ${colName} for ${btn.id}`, e);
@@ -1122,10 +1143,8 @@
                                 <div class="list-item-title">${escapeHtml(item.title)}</div>
                                 <div class="list-item-desc">${escapeHtml(item.description)}</div>
                             </div>
-                            <div class="list-item-footer">
-                                <span class="list-price">${item.price}</span>
-                                <button class="btn-more-details" style="width: auto; padding-left: 12px; padding-right: 12px; margin-top: 0;">ПОДРОБНЕЕ</button>
-                            </div>
+                            <!-- FIX: Use standard button styling in list footer or absolute -->
+                            <button class="btn-more-details">ПОДРОБНЕЕ</button>
                         </div>
                     `;
                     container.appendChild(card);
@@ -1474,6 +1493,37 @@
             const input = document.getElementById('new-cat-input'); const val = input.value.trim();
             if(val) { availableCategories.add(val); input.value = ''; renderSubListItems(); }
         }
+        
+        // --- NEW DELETE LOGIC (Fixing Persistence Issue) ---
+        async function deleteSubItem(idx) {
+            if (!confirm("⚠️ Точно удалить? Восстановить нельзя!")) return;
+            
+            const btn = tempAppData.mainMenu[currentEditingIndex];
+            const item = btn.items[idx];
+            
+            // Check if item has ID (exists in DB) and is complex type
+            if (item.id && ['gallery', 'products'].includes(btn.mode)) {
+                 const colName = btn.mode === 'gallery' ? 'prompts' : 'products';
+                 const btnSub = document.getElementById('btn-save-sub');
+                 if(btnSub) { btnSub.disabled = true; btnSub.innerText = "⏳ Удаление из БД..."; }
+                 
+                 try {
+                     await db.collection(colName).doc(item.id).delete();
+                     console.log(`Deleted doc ${item.id} from ${colName}`);
+                 } catch (e) {
+                     console.error("Delete failed:", e);
+                     alert("Ошибка удаления из БД: " + e.message);
+                     if(btnSub) { btnSub.disabled = false; btnSub.innerText = "💾 Сохранить изменения"; }
+                     return;
+                 }
+                 
+                 if(btnSub) { btnSub.disabled = false; btnSub.innerText = "💾 Сохранить изменения"; }
+            }
+            
+            // Remove from local array
+            btn.items.splice(idx, 1);
+            renderSubListItems();
+        }
 
         function renderSubListItems() {
             const list = document.getElementById('admin-sublist-items'); list.innerHTML = '';
@@ -1495,6 +1545,9 @@
 
                 const div = document.createElement('div'); div.className = "guide-item-admin";
                 
+                // USE NEW deleteSubItem FUNCTION
+                const deleteButton = `<button onclick="deleteSubItem(${idx})" class="text-red-500 px-2 font-bold">🗑️</button>`;
+
                 if (isProd) {
                     const images = item.images || [];
                     let previews = '';
@@ -1509,7 +1562,7 @@
                              <span class="text-[10px] text-purple-400 font-bold">ТОВАР ${idx+1}</span>
                              <div class="flex gap-2">
                                 ${upBtn} ${downBtn}
-                                <button onclick="tempAppData.mainMenu[${currentEditingIndex}].items.splice(${idx},1); renderSubListItems();" class="text-red-500 px-2">✕</button>
+                                ${deleteButton}
                              </div>
                         </div>
                         <div class="flex gap-2 mb-2">${previews}</div>
@@ -1566,7 +1619,7 @@
                              <span class="text-[10px] font-bold">СЛАЙД ${idx+1}</span>
                              <div class="flex gap-2">
                                 ${upBtn} ${downBtn}
-                                <button onclick="tempAppData.mainMenu[${currentEditingIndex}].items.splice(${idx},1); renderSubListItems();" class="text-red-500 px-2">✕</button>
+                                ${deleteButton}
                              </div>
                         </div>
                         
@@ -1654,7 +1707,8 @@
                                 db.collection(colName).doc(item.id).set(item, { merge: true })
                             );
                         }
-
+                        
+                        // CRITICAL: Force empty array in config to prevent duplication/persistence of old items in main file
                         btn.items = []; 
                     }
                 }
