@@ -53,7 +53,7 @@
             user-select: text;
         }
 
-        /* UPLOAD PROGRESS STYLES - REMOVED AS REQUESTED, BUT KEEPING CSS CLASS JUST IN CASE TO NOT BREAK LAYOUT IF USED ELSEWHERE */
+        /* UPLOAD PROGRESS STYLES - REMOVED AS REQUESTED */
         .upload-progress { display: none; }
 
         .bg-glow {
@@ -280,7 +280,7 @@
             transition: transform 0.2s; background: #111;
         }
         .gallery-item:active { transform: scale(0.96); }
-        .gallery-img { width: 100%; height: 100%; object-fit: cover; will-change: opacity; }
+        .gallery-img { width: 100%; height: 100%; object-fit: cover; object-position: center; will-change: opacity; }
         .gallery-overlay {
             position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
             padding: 10px; display: flex; flex-direction: column; justify-content: flex-end; height: 50%;
@@ -371,7 +371,7 @@
         .product-card:active { transform: scale(0.97); }
 
         .product-image {
-            width: 100%; aspect-ratio: 1/1; object-fit: cover;
+            width: 100%; aspect-ratio: 1/1; object-fit: cover; object-position: center;
             border-bottom: 1px solid rgba(255,255,255,0.05);
         }
 
@@ -379,7 +379,6 @@
             position: absolute; top: 8px; right: 8px; padding: 4px 8px;
             border-radius: 6px; font-size: 10px; font-weight: 700; text-transform: uppercase;
             backdrop-filter: blur(8px); z-index: 2; border: 1px solid rgba(255,255,255,0.1);
-            /* ПРАВКА: ОДИНАКОВЫЙ РАЗМЕР ПЛАШЕК И ЦЕНТРОВКА */
             min-width: 80px;
             text-align: center;
             display: flex;
@@ -408,10 +407,9 @@
         
         .product-desc-short {
             font-size: 11px; color: #888; line-height: 1.4;
-            /* ПРАВКА: ВЕРНУЛА ОПИСАНИЕ, ЗАДАЛА ВЫСОТУ И СКРОЛЛ */
             display: block;
-            height: 45px; /* Фиксированная высота для 2-3 строк */
-            overflow-y: auto; /* Скролл если длиннее */
+            height: 45px;
+            overflow-y: auto;
             margin-top: 8px;
             padding-right: 2px;
             flex-shrink: 0;
@@ -427,7 +425,16 @@
         .price-new { color: var(--neon-color); font-weight: 700; font-size: 15px; }
         .price-old { color: #555; font-size: 11px; text-decoration: line-through; }
 
-        .product-slider { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; gap: 10px; padding-bottom: 10px; }
+        .product-slider { 
+            display: flex; 
+            overflow-x: auto; 
+            scroll-snap-type: x mandatory; 
+            scrollbar-width: none; 
+            gap: 10px; 
+            padding-bottom: 10px;
+            /* ПРАВКА 4: Центровка слайдера при широком экране */
+            justify-content: flex-start; 
+        }
         .product-slider::-webkit-scrollbar { display: none; }
         
         .product-slide { 
@@ -437,21 +444,23 @@
             overflow: hidden; 
             aspect-ratio: 1/1; 
             background: #000; 
-            border: 1px solid rgba(255,255,255,0.1); 
+            border: 1px solid rgba(255,255,255,0.1);
         }
-        .product-slide img { width: 100%; height: 100%; object-fit: cover; }
+        /* ПРАВКА 3 и 4: Центровка фото внутри слайда */
+        .product-slide img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
 
-        /* FIX FOR TABLETS / LANDSCAPE MODE */
-        @media (orientation: landscape) {
+        /* ПРАВКА 1: Улучшение для планшетов (ландшафт) */
+        @media (orientation: landscape) and (min-height: 300px) {
             #product-modal-slider {
                 display: flex;
-                justify-content: center;
+                justify-content: center; /* Слайдер по центру */
             }
             .product-slide {
                 flex: 0 0 auto;
-                height: 50vh; /* Ограничиваем высоту фото, чтобы было место для текста */
+                height: 50vh; /* Ограничиваем высоту чтобы влез текст */
                 width: auto;
                 aspect-ratio: 1/1;
+                margin: 0 auto; /* Центровка самого элемента */
             }
             .product-slide img {
                 height: 100%;
@@ -462,7 +471,7 @@
         #product-modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5,5,8,0.98);
             z-index: 250; display: flex; flex-direction: column; transform: translateY(100%);
-            transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); padding: 0; overflow-y: hidden; /* ПРАВКА: Убрала скролл с контейнера */
+            transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); padding: 0; overflow-y: hidden;
         }
         #product-modal.active-modal { transform: translateY(0); }
 
@@ -528,18 +537,17 @@
         </div>
     </div>
 
-    <!-- ПРАВКА: ИЗМЕНЕНА СТРУКТУРА МОДАЛКИ ТОВАРА -->
     <div id="product-modal">
         <div class="relative w-full h-full flex flex-col">
             <button onclick="closeProductModal()" class="absolute top-4 right-4 z-50 w-8 h-8 bg-black/50 rounded-full text-white flex items-center justify-center backdrop-blur-md">✕</button>
             
-            <!-- Слайдер (статичен) -->
+            <!-- Слайдер (flex-shrink-0 чтобы не сжимался больше чем нужно) -->
             <div class="p-4 pb-0 flex-shrink-0">
                 <div class="product-slider" id="product-modal-slider"></div>
                 <div class="text-center text-[10px] text-gray-500 mt-2">Листай фото →</div>
             </div>
 
-            <!-- Заголовок и Цена (ЗАКРЕПЛЕНЫ) -->
+            <!-- Заголовок и Цена (ЗАКРЕПЛЕНЫ - flex-shrink-0) -->
             <div class="p-5 pb-2 flex-shrink-0 bg-[#050508]/90 z-10">
                 <h2 id="product-modal-title" class="text-2xl font-bold text-white mb-1"></h2>
                 
@@ -550,7 +558,7 @@
                 <div class="w-full h-[1px] bg-white/10"></div>
             </div>
 
-            <!-- Описание (СКРОЛЛИТСЯ) -->
+            <!-- Описание (СКРОЛЛИТСЯ - flex-grow) -->
             <div class="px-5 pb-20 flex-grow overflow-y-auto">
                 <p id="product-modal-desc" class="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap pt-2"></p>
             </div>
@@ -1133,7 +1141,6 @@
                 const upBtn = idx > 0 ? `<button onclick="moveMainMenuButton(${idx}, -1)" class="px-2 text-gray-500 hover:text-cyan-400 transition">▲</button>` : `<span class="px-2 opacity-0">▲</span>`;
                 const downBtn = idx < total - 1 ? `<button onclick="moveMainMenuButton(${idx}, 1)" class="px-2 text-gray-500 hover:text-cyan-400 transition">▼</button>` : `<span class="px-2 opacity-0">▼</span>`;
 
-                // ПРАВКА: ИСПРАВЛЕНЫ НАЗВАНИЯ "BUTTON" НА "БЛОК"
                 div.innerHTML = `
                     <div class="flex justify-between items-center mb-4">
                         <span class="text-[10px] text-cyan-400">БЛОК ${idx+1}</span>
@@ -1220,7 +1227,7 @@
                     const canvas = document.getElementById('compress-canvas');
                     const ctx = canvas.getContext('2d');
                     let w = img.width, h = img.height;
-                    const MAX_SIDE = 600; // Требование: не больше 600px
+                    const MAX_SIDE = 600; 
                     if (w > h) {
                         if (w > MAX_SIDE) { h = Math.round(h * (MAX_SIDE / w)); w = MAX_SIDE; }
                     } else {
@@ -1229,7 +1236,6 @@
                     canvas.width = w; canvas.height = h;
                     ctx.drawImage(img, 0, 0, w, h);
                     
-                    // Требование: качество 0.5
                     const dataUrl = canvas.toDataURL('image/jpeg', 0.5);
                     callback(dataUrl);
                 };
@@ -1240,7 +1246,6 @@
             const file = input.files[0]; 
             if (!file) return;
 
-            // UI: Просто блокируем кнопки, как просили (убрал прогресс-бар)
             const btnGlobal = document.getElementById('btn-save-global');
             const btnSub = document.getElementById('btn-save-sub');
             if(btnGlobal) { btnGlobal.disabled = true; btnGlobal.innerText = "⏳ Обработка..."; }
@@ -1251,13 +1256,15 @@
                 const slot = input.dataset.slot;
 
                 if (mode === 'products' || mode === 'gallery') {
-                    if (!tempAppData.mainMenu[currentEditingIndex].items[idx].images) 
-                        tempAppData.mainMenu[currentEditingIndex].items[idx].images = [];
+                    // ПРАВКА 2: Корректная инициализация массива фото для галереи
+                    if (!tempAppData.mainMenu[currentEditingIndex].items[idx].images) {
+                        const existingUrl = tempAppData.mainMenu[currentEditingIndex].items[idx].imageUrl || '';
+                        tempAppData.mainMenu[currentEditingIndex].items[idx].images = [existingUrl];
+                    }
                     
                     while(tempAppData.mainMenu[currentEditingIndex].items[idx].images.length <= slot) 
                         tempAppData.mainMenu[currentEditingIndex].items[idx].images.push('');
                     
-                    // Сохраняем Base64 прямо в структуру
                     tempAppData.mainMenu[currentEditingIndex].items[idx].images[slot] = base64;
                     
                     if(mode === 'gallery' && slot == 0) 
@@ -1266,10 +1273,8 @@
                     tempAppData.mainMenu[currentEditingIndex].items[idx].imageUrl = base64;
                 }
 
-                // Показываем превью сразу
                 input.parentElement.style.backgroundImage = `url('${base64}')`;
 
-                // Разблокируем через 1 сек
                 setTimeout(() => {
                     if(btnGlobal) { btnGlobal.disabled = false; btnGlobal.innerText = "💾 Сохранить изменения"; }
                     if(btnSub) { btnSub.disabled = false; btnSub.innerText = "💾 Сохранить изменения"; renderSubListItems(); }
@@ -1277,13 +1282,11 @@
             });
         }
         
-        // ПРАВКА: НОВАЯ ФУНКЦИЯ УДАЛЕНИЯ ФОТО
         function removeImage(itemIdx, imgSlot) {
             if(confirm('Удалить фото?')) {
                 const item = tempAppData.mainMenu[currentEditingIndex].items[itemIdx];
                 if(item.images && item.images[imgSlot]) {
                      item.images[imgSlot] = '';
-                     // Если удаляем главное фото галереи (слот 0), чистим и imageUrl
                      if(tempAppData.mainMenu[currentEditingIndex].mode === 'gallery' && imgSlot === 0) {
                          item.imageUrl = '';
                      }
@@ -1324,13 +1327,10 @@
                     let previews = '';
                     for(let i=0; i<3; i++) {
                         const bg = images[i] ? `background-image: url('${images[i]}')` : '';
-                        // ПРАВКА: ДОБАВЛЕН КРЕСТИК УДАЛЕНИЯ (КРАСНАЯ КНОПКА)
                         const deleteBtn = images[i] ? `<button onclick="removeImage(${idx}, ${i})" class="absolute top-0 right-0 bg-red-500/80 text-white w-5 h-5 flex items-center justify-center rounded-bl-lg hover:bg-red-600 transition z-20">×</button>` : '';
                         previews += `<div class="relative w-16 h-16 bg-black/40 border border-white/20 rounded flex items-center justify-center overflow-hidden bg-cover bg-center" style="${bg}">${deleteBtn}<input type="file" data-slot="${i}" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer" onchange="handleFileUpload(this, ${idx})">${!images[i]?'<span class="text-xs opacity-50">+</span>':''}</div>`;
                     }
                     
-                    // ПРАВКА: ТЕХНИЧЕСКОЕ НАЗВАНИЕ "ITEM" ЗАМЕНЕНО НА "ТОВАР"
-                    // ПРАВКА: ДОБАВЛЕН ВЫБОР ЦВЕТА ПЛАШКИ
                     div.innerHTML = `
                         <div class="flex justify-between items-start mb-2">
                              <span class="text-[10px] text-purple-400 font-bold">ТОВАР ${idx+1}</span>
@@ -1384,7 +1384,6 @@
                      let previews = '';
                      for(let i=0; i<3; i++) {
                         const bg = images[i] ? `background-image: url('${images[i]}')` : '';
-                        // ПРАВКА: ДОБАВЛЕН КРЕСТИК УДАЛЕНИЯ (КРАСНАЯ КНОПКА)
                         const deleteBtn = images[i] ? `<button onclick="removeImage(${idx}, ${i})" class="absolute top-0 right-0 bg-red-500/80 text-white w-5 h-5 flex items-center justify-center rounded-bl-lg hover:bg-red-600 transition z-20">×</button>` : '';
                         previews += `<div class="relative w-16 h-16 bg-black/40 border border-white/20 rounded flex items-center justify-center overflow-hidden bg-cover bg-center" style="${bg}">${deleteBtn}<input type="file" data-slot="${i}" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer" onchange="handleFileUpload(this, ${idx})">${!images[i]?'<span class="text-xs opacity-50">+</span>':''}</div>`;
                      }
@@ -1461,17 +1460,13 @@
             tempAppData.headerSubtitle = document.getElementById('admin-header-subtitle').value;
 
             try {
-                // ЯВНО УКАЗЫВАЕМ ID АДМИНА
                 const secureData = {
-                    admin_id: ADMIN_ID, // ИСПРАВЛЕНО: поле admin_id (snake_case)
+                    admin_id: ADMIN_ID, 
                     ...tempAppData,
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 };
 
-                // --- ЗАЩИТА ОТ ПЕРЕПОЛНЕНИЯ (НОВАЯ ЛОГИКА) ---
-                // Проверяем примерный размер JSON-строки
                 const dataString = JSON.stringify(secureData);
-                // ПРАВКА: УВЕЛИЧЕН ЛИМИТ ДО 1.048 МБ (Технический лимит Firestore - 1,048,576 байт)
                 if (dataString.length > 1048000) { 
                     tg.showAlert("Фото всё ещё слишком большое, выбери другое!");
                     btns.forEach(b => { 
@@ -1479,15 +1474,12 @@
                         b.innerText = "Превышен лимит размера!"; 
                         b.style.background = "#ff4d4d"; 
                     });
-                    return; // Прерываем сохранение
+                    return; 
                 }
-                // ----------------------------------------------
 
-                console.log("Отправляю данные:", secureData); // Для отладки
-                // Сохраняем с merge, чтобы не затереть лишнее
+                console.log("Отправляю данные:", secureData); 
                 const savePromise = db.collection('configs').doc(configDocId).set(secureData, { merge: true });
                 
-                // Ждем результат
                 await savePromise;
                 
                 console.log("Сохранено успешно! ✨");
@@ -1500,13 +1492,11 @@
                 document.getElementById('save-status').style.opacity = '1';
                 setTimeout(() => { 
                     document.getElementById('save-status').style.opacity = '0'; 
-                    // ПРАВКА: УБРАНО closeAdmin() - ТЕПЕРЬ АДМИНКА НЕ ЗАКРЫВАЕТСЯ АВТОМАТИЧЕСКИ
                     btns.forEach(b => { b.disabled = false; b.innerText = "💾 Сохранить изменения"; b.style.background = ""; });
                 }, 1500);
 
             } catch (error) {
                 console.error("CRITICAL FIREBASE ERROR:", error);
-                // Выводим реальную причину на экран, чтобы хозяйка видела
                 tg.showAlert("ОШИБКА БАЗЫ:\n" + error.message + "\nПроверь вкладку Rules в Firebase!");
                 btns.forEach(b => { b.disabled = false; b.innerText = "Ошибка! Повторить"; b.style.background = "#ff4d4d"; });
             }
@@ -1529,7 +1519,7 @@
                 const docs = [];
                 snap.forEach(d => { 
                     let obj = d.data(); 
-                    if(obj.deleted) return; // Фильтруем удаленные
+                    if(obj.deleted) return; 
                     obj.id = d.id; 
                     docs.push(obj); 
                 });
@@ -1576,7 +1566,6 @@
         }
         function approveReview(id) { db.collection('reviews').doc(id).update({ approved: true, admin_id: ADMIN_ID }).then(() => { tg.showAlert("Одобрено"); loadModerationList(); }); }
         
-        // ИСПРАВЛЕНО: Заменили delete() на update() (Soft Delete) для передачи admin_id
         function deleteReview(id) { 
             if(confirm('Удалить?')) {
                 db.collection('reviews').doc(id).update({ 
