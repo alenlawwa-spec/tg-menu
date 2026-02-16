@@ -52,10 +52,6 @@
             -ms-user-select: text;
             user-select: text;
         }
-        
-        /* --- UI BUG FIXES --- */
-        ::-webkit-scrollbar { display: none; }
-        * { -webkit-tap-highlight-color: transparent; }
 
         .upload-progress { display: none; }
 
@@ -292,6 +288,12 @@
         .gallery-img, .product-image, .list-item-img { 
             width: 100%; height: 100%; object-fit: cover; will-change: opacity; 
             object-position: top !important; 
+        }
+
+        /* NEW PLACEHOLDER CLASS */
+        .img-placeholder {
+            background-color: #1a1a1a;
+            transition: opacity 0.3s;
         }
         
         .gallery-overlay {
@@ -954,7 +956,12 @@
                 if (['gallery', 'products'].includes(btn.mode) && btn.id) {
                     const colName = btn.mode === 'gallery' ? 'prompts' : 'products';
                     try {
-                        const snap = await db.collection(colName).where('parentId', '==', btn.id).get();
+                        const snap = await db.collection(colName)
+                            .where('parentId', '==', btn.id)
+                            .orderBy('createdAt', 'desc')
+                            .limit(20)
+                            .get();
+
                         const items = [];
                         snap.forEach(d => {
                             let item = d.data();
@@ -962,15 +969,10 @@
                             items.push(item);
                         });
                         
-                        items.sort((a, b) => {
-                            const dateA = a.createdAt || '';
-                            const dateB = b.createdAt || '';
-                            if (dateA > dateB) return -1;
-                            if (dateA < dateB) return 1;
-                            return 0;
-                        });
-                        
                         btn.items = items;
+                        btn.lastVisible = snap.docs[snap.docs.length - 1];
+                        btn.hasMore = snap.docs.length === 20;
+
                     } catch (e) {
                         console.error(`Error loading ${colName} for ${btn.id}`, e);
                         btn.items = [];
@@ -979,6 +981,65 @@
             });
             
             await Promise.all(promises);
+        }
+
+        async function loadMoreItems(btn) {
+            if (!btn.lastVisible || !btn.hasMore) return;
+            
+            const loadBtn = document.getElementById('btn-load-more');
+            if (loadBtn) {
+                loadBtn.disabled = true;
+                loadBtn.textContent = 'Загрузка...';
+            }
+
+            const colName = btn.mode === 'gallery' ? 'prompts' : 'products';
+            
+            try {
+                const snap = await db.collection(colName)
+                    .where('parentId', '==', btn.id)
+                    .orderBy('createdAt', 'desc')
+                    .startAfter(btn.lastVisible)
+                    .limit(20)
+                    .get();
+
+                const newItems = [];
+                snap.forEach(d => {
+                    let item = d.data();
+                    item.id = d.id;
+                    newItems.push(item);
+                });
+
+                if (newItems.length > 0) {
+                    btn.items = [...btn.items, ...newItems];
+                    btn.lastVisible = snap.docs[snap.docs.length - 1];
+                    btn.hasMore = snap.docs.length === 20;
+                    
+                    const container = document.querySelector(btn.viewType === 'list' ? '.list-view-container' : '.gallery-grid');
+                    
+                    if (btn.mode === 'gallery') {
+                        renderGalleryItems(newItems, container, btn.viewType, true);
+                    } else if (btn.mode === 'products') {
+                        renderProductItems(newItems, container, btn.viewType, true);
+                    }
+                } else {
+                    btn.hasMore = false;
+                }
+
+                if (loadBtn) {
+                    if (!btn.hasMore) loadBtn.style.display = 'none';
+                    else {
+                        loadBtn.disabled = false;
+                        loadBtn.textContent = 'Показать еще';
+                    }
+                }
+                
+            } catch (e) {
+                console.error("Error loading more items", e);
+                if (loadBtn) {
+                    loadBtn.disabled = false;
+                    loadBtn.textContent = 'Ошибка. Повторить?';
+                }
+            }
         }
         
         async function forceReconnect() {
@@ -1086,12 +1147,7 @@
 
             if (btnData.mode === 'gallery') {
                 const allItems = btnData.items || [];
-                // Collect all unique categories (handle both string and array)
-                const rawCats = allItems.flatMap(i => {
-                    if (Array.isArray(i.category)) return i.category;
-                    return i.category ? [i.category] : [];
-                });
-                const categories = ['Все', ...new Set(rawCats)];
+                const categories = ['Все', ...new Set(allItems.map(i => i.category).filter(Boolean))];
                 
                 const gridContainer = document.createElement('div');
                 gridContainer.className = viewType === 'list' ? 'gallery-list animate-pulse-enter' : 'gallery-grid animate-pulse-enter';
@@ -1106,15 +1162,9 @@
                         chip.onclick = (e) => {
                             document.querySelectorAll('.category-chip').forEach(c => c.classList.remove('active'));
                             e.target.classList.add('active');
-                            
-                            // Updated Filter Logic
-                            const filtered = cat === 'Все'
-                                ? allItems
-                                : allItems.filter(i => {
-                                    if (Array.isArray(i.category)) return i.category.includes(cat);
-                                    return i.category === cat;
-                                });
-                                
+                            const filtered = cat === 'Все' ? allItems : allItems.filter(i => i.category === cat);
+                            // Reset grid before rendering filtered
+                            gridContainer.innerHTML = '';
                             renderGalleryItems(filtered, gridContainer, viewType);
                             tg.HapticFeedback.selectionChanged();
                         };
@@ -1124,12 +1174,30 @@
                 }
                 container.appendChild(gridContainer);
                 renderGalleryItems(allItems, gridContainer, viewType);
+                
+                if (btnData.hasMore) {
+                    const loadBtn = document.createElement('button');
+                    loadBtn.id = 'btn-load-more';
+                    loadBtn.className = 'btn-save-cyber mt-4 mb-8';
+                    loadBtn.textContent = 'Показать еще';
+                    loadBtn.onclick = () => loadMoreItems(btnData);
+                    container.appendChild(loadBtn);
+                }
             } 
             else if (btnData.mode === 'products') {
                 const gridContainer = document.createElement('div');
                 gridContainer.className = viewType === 'list' ? 'list-view-container pb-24' : 'gallery-grid pb-24'; 
                 container.appendChild(gridContainer);
                 renderProductItems(btnData.items || [], gridContainer, viewType);
+
+                if (btnData.hasMore) {
+                    const loadBtn = document.createElement('button');
+                    loadBtn.id = 'btn-load-more';
+                    loadBtn.className = 'btn-save-cyber mt-4 mb-20';
+                    loadBtn.textContent = 'Показать еще';
+                    loadBtn.onclick = () => loadMoreItems(btnData);
+                    container.appendChild(loadBtn);
+                }
             }
             else if (btnData.mode === 'reviews') {
                 container.className = 'flex flex-col pb-20';
@@ -1155,51 +1223,68 @@
             tg.BackButton.show();
         }
 
-        function renderGalleryItems(items, container, viewType) {
-            container.innerHTML = '';
-            items.forEach((item) => {
-                const imgUrl = (item.images && item.images.length > 0) ? item.images[0] : item.imageUrl;
-                
-                item.image = imgUrl;
-                if (!item.description) item.description = item.prompt;
+        function renderGalleryItems(items, container, viewType, append = false) {
+            if (!append) container.innerHTML = '';
+            
+            let index = 0;
+            const CHUNK_SIZE = 10;
 
-                const div = document.createElement('div');
-                div.onclick = () => openGalleryModal(imgUrl, item.prompt);
+            function renderChunk() {
+                const limit = Math.min(index + CHUNK_SIZE, items.length);
+                for (let i = index; i < limit; i++) {
+                    const item = items[i];
+                    const imgUrl = (item.images && item.images.length > 0) ? item.images[0] : item.imageUrl;
+                    
+                    item.image = imgUrl;
+                    if (!item.description) item.description = item.prompt;
 
-                if (viewType === 'list') {
-                    div.className = 'bg-black/40 p-3 rounded-lg border border-gray-800 flex flex-row gap-3 relative';
-                    div.innerHTML = `
-                        <div class="w-24 h-24 flex-shrink-0">
-                            <img src="${item.image || ''}" class="w-full h-full object-cover object-top rounded-md">
-                        </div>
-                        <div class="flex-1 flex flex-col justify-between">
-                            <div>
-                                <div class="text-white font-bold text-sm leading-tight mb-1 text-left">${item.title || ''}</div>
-                                <div class="text-gray-400 text-[10px] leading-snug line-clamp-3 text-left">${item.description || ''}</div>
+                    const div = document.createElement('div');
+                    div.onclick = () => openGalleryModal(imgUrl, item.prompt);
+
+                    const imgTag = `<img src="${item.image || ''}" loading="lazy" class="w-full h-full object-cover object-top ${viewType === 'list' ? 'rounded-md' : 'transition-transform duration-500 group-hover:scale-110'} img-placeholder" onload="this.classList.remove('img-placeholder')" onerror="this.src='https://via.placeholder.com/150?text=Error'">`;
+
+                    if (viewType === 'list') {
+                        div.className = 'bg-black/40 p-3 rounded-lg border border-gray-800 flex flex-row gap-3 relative';
+                        div.innerHTML = `
+                            <div class="w-24 h-24 flex-shrink-0">
+                                ${imgTag}
                             </div>
-                            <div class="flex justify-end mt-2">
-                                <button class="bg-[rgba(0,242,255,0.1)] border border-[#00f2ff] text-[#00f2ff] text-[10px] uppercase px-3 py-1 rounded shadow-[0_0_5px_rgba(0,242,255,0.2)]">
-                                    ПОДРОБНЕЕ
-                                </button>
+                            <div class="flex-1 flex flex-col justify-between">
+                                <div>
+                                    <div class="text-white font-bold text-sm leading-tight mb-1 text-left">${item.title || ''}</div>
+                                    <div class="text-gray-400 text-[10px] leading-snug line-clamp-3 text-left">${item.description || ''}</div>
+                                </div>
+                                <div class="flex justify-end mt-2">
+                                    <button class="bg-[rgba(0,242,255,0.1)] border border-[#00f2ff] text-[#00f2ff] text-[10px] uppercase px-3 py-1 rounded shadow-[0_0_5px_rgba(0,242,255,0.2)]">
+                                        ПОДРОБНЕЕ
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                    `;
-                } else {
-                    div.className = 'relative aspect-[3/4] overflow-hidden rounded-xl group cursor-pointer border border-white/10';
-                    div.innerHTML = `
-                        <img src="${item.image || ''}" class="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-110">
-                        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent flex flex-col justify-end p-3">
-                            <div class="text-white font-bold text-[10px] leading-tight mb-2 text-left line-clamp-2">${item.title || ''}</div>
-                            <div class="flex justify-start">
-                                <button class="bg-[rgba(0,242,255,0.1)] border border-[#00f2ff] text-[#00f2ff] text-[8px] uppercase px-2 py-1 rounded">
-                                    ПОДРОБНЕЕ
-                                </button>
+                        `;
+                    } else {
+                        div.className = 'relative aspect-[3/4] overflow-hidden rounded-xl group cursor-pointer border border-white/10';
+                        div.innerHTML = `
+                            ${imgTag}
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent flex flex-col justify-end p-3">
+                                <div class="text-white font-bold text-[10px] leading-tight mb-2 text-left line-clamp-2">${item.title || ''}</div>
+                                <div class="flex justify-start">
+                                    <button class="bg-[rgba(0,242,255,0.1)] border border-[#00f2ff] text-[#00f2ff] text-[8px] uppercase px-2 py-1 rounded">
+                                        ПОДРОБНЕЕ
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                    `;
+                        `;
+                    }
+                    container.appendChild(div);
                 }
-                container.appendChild(div);
-            });
+                
+                index = limit;
+                if (index < items.length) {
+                    requestAnimationFrame(renderChunk);
+                }
+            }
+            
+            requestAnimationFrame(renderChunk);
         }
         
         const STATUS_MAP = {
@@ -1221,88 +1306,105 @@
             'cyan': { bg: '#00f2ff', color: '#000', border: '#00f2ff' }
         };
 
-        function renderProductItems(items, container, viewType) {
-            container.innerHTML = '';
-            items.forEach(item => {
-                const mainImg = (item.images && item.images.length > 0) ? item.images[0] : item.imageUrl;
-                const statusData = STATUS_MAP[item.status];
-                
-                let badgeHtml = '';
-                if (statusData) {
-                    let styleAttr = '';
-                    if (item.badgeColor && BADGE_COLORS[item.badgeColor]) {
-                        const c = BADGE_COLORS[item.badgeColor];
-                        styleAttr = `style="background: ${c.bg}; color: ${c.color}; border-color: ${c.border};"`;
-                    } else {
-                        styleAttr = `class="product-badge ${statusData.class}"`;
+        function renderProductItems(items, container, viewType, append = false) {
+            if (!append) container.innerHTML = '';
+            
+            let index = 0;
+            const CHUNK_SIZE = 10;
+
+            function renderChunk() {
+                const limit = Math.min(index + CHUNK_SIZE, items.length);
+                for (let i = index; i < limit; i++) {
+                    const item = items[i];
+                    const mainImg = (item.images && item.images.length > 0) ? item.images[0] : item.imageUrl;
+                    const statusData = STATUS_MAP[item.status];
+                    
+                    let badgeHtml = '';
+                    if (statusData) {
+                        let styleAttr = '';
+                        if (item.badgeColor && BADGE_COLORS[item.badgeColor]) {
+                            const c = BADGE_COLORS[item.badgeColor];
+                            styleAttr = `style="background: ${c.bg}; color: ${c.color}; border-color: ${c.border};"`;
+                        } else {
+                            styleAttr = `class="product-badge ${statusData.class}"`;
+                        }
+                        if (styleAttr.startsWith('style')) styleAttr = `class="product-badge" ` + styleAttr;
+                        badgeHtml = `<div ${styleAttr}>${statusData.label}</div>`;
                     }
-                    if (styleAttr.startsWith('style')) styleAttr = `class="product-badge" ` + styleAttr;
-                    badgeHtml = `<div ${styleAttr}>${statusData.label}</div>`;
-                }
-
-                if (viewType === 'list') {
-                    const card = document.createElement('div');
-                    card.className = 'bg-black/40 p-3 rounded-lg border border-gray-800 flex flex-row gap-3 relative cursor-pointer'; 
-                    card.onclick = () => openProductModal(item);
                     
-                    const listBadge = badgeHtml ? badgeHtml.replace('product-badge', 'product-badge scale-75 origin-top-right absolute top-2 right-2') : '';
+                    const imgTag = `<img src="${mainImg || 'https://via.placeholder.com/400'}" loading="lazy" class="w-full h-full object-cover object-top img-placeholder ${viewType === 'list' ? 'rounded-md' : ''}" onload="this.classList.remove('img-placeholder')" onerror="this.src='https://via.placeholder.com/400?text=N/A'">`;
 
-                    let priceHtmlList = `<span class="text-[var(--neon-color)] font-mono text-xs">${escapeHtml(item.price || '')}</span>`;
-                    if(item.oldPrice) priceHtmlList += ` <span class="text-gray-500 text-[10px] line-through ml-2">${escapeHtml(item.oldPrice)}</span>`;
-
-                    card.innerHTML = `
-                        ${listBadge}
-                        <div class="w-24 h-24 flex-shrink-0">
-                            <img src="${mainImg || 'https://via.placeholder.com/150'}" 
-                                 class="w-full h-full object-cover object-top rounded-md">
-                        </div>
+                    if (viewType === 'list') {
+                        const card = document.createElement('div');
+                        card.className = 'bg-black/40 p-3 rounded-lg border border-gray-800 flex flex-row gap-3 relative cursor-pointer'; 
+                        card.onclick = () => openProductModal(item);
                         
-                        <div class="flex-1 flex flex-col justify-between">
-                            <div>
-                                <div class="text-white font-bold text-sm leading-tight mb-0">${escapeHtml(item.title)}</div>
-                                <div class="mb-1">${priceHtmlList}</div>
-                                <div class="text-gray-400 text-[10px] leading-snug line-clamp-3">${escapeHtml(item.description || '')}</div>
+                        const listBadge = badgeHtml ? badgeHtml.replace('product-badge', 'product-badge scale-75 origin-top-right absolute top-2 right-2') : '';
+
+                        let priceHtmlList = `<span class="text-[var(--neon-color)] font-mono text-xs">${escapeHtml(item.price || '')}</span>`;
+                        if(item.oldPrice) priceHtmlList += ` <span class="text-gray-500 text-[10px] line-through ml-2">${escapeHtml(item.oldPrice)}</span>`;
+
+                        card.innerHTML = `
+                            ${listBadge}
+                            <div class="w-24 h-24 flex-shrink-0">
+                                ${imgTag}
                             </div>
                             
-                            <div class="flex justify-end mt-2">
-                                <button class="bg-[rgba(0,242,255,0.1)] border border-[#00f2ff] text-[#00f2ff] text-[10px] uppercase px-3 py-1 rounded shadow-[0_0_5px_rgba(0,242,255,0.2)]">
-                                    ПОДРОБНЕЕ
-                                </button>
+                            <div class="flex-1 flex flex-col justify-between">
+                                <div>
+                                    <div class="text-white font-bold text-sm leading-tight mb-0">${escapeHtml(item.title)}</div>
+                                    <div class="mb-1">${priceHtmlList}</div>
+                                    <div class="text-gray-400 text-[10px] leading-snug line-clamp-3">${escapeHtml(item.description || '')}</div>
+                                </div>
+                                
+                                <div class="flex justify-end mt-2">
+                                    <button class="bg-[rgba(0,242,255,0.1)] border border-[#00f2ff] text-[#00f2ff] text-[10px] uppercase px-3 py-1 rounded shadow-[0_0_5px_rgba(0,242,255,0.2)]">
+                                        ПОДРОБНЕЕ
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                    `;
-                    container.appendChild(card);
+                        `;
+                        container.appendChild(card);
 
-                } else {
-                    // ANDROID GRID FIX APPLIED HERE
-                    const card = document.createElement('div');
-                    card.className = 'product-card cursor-pointer flex flex-col h-full relative overflow-hidden bg-[#111] rounded-xl border border-white/10'; 
-                    card.onclick = () => openProductModal(item);
-                    let priceHtml = `<span class="text-[var(--neon-color)] font-bold text-sm">${item.price || ''}</span>`;
-                    if(item.oldPrice) priceHtml += ` <span class="text-gray-500 text-[10px] line-through ml-1">${item.oldPrice}</span>`;
-                    
-                    card.innerHTML = `
-                        ${badgeHtml}
-                        <div class="relative w-full aspect-square flex-shrink-0">
-                            <img src="${mainImg || 'https://via.placeholder.com/400'}" class="w-full h-full object-cover object-top">
-                        </div>
+                    } else {
+                        const card = document.createElement('div');
+                        card.className = 'product-card cursor-pointer flex flex-col h-full relative overflow-hidden bg-[#111] rounded-xl border border-white/10'; 
+                        card.onclick = () => openProductModal(item);
+                        let priceHtml = `<span class="text-[var(--neon-color)] font-bold text-sm">${item.price || ''}</span>`;
+                        if(item.oldPrice) priceHtml += ` <span class="text-gray-500 text-[10px] line-through ml-1">${item.oldPrice}</span>`;
                         
-                        <div class="p-3 flex flex-col flex-1">
-                            <div class="mb-2">
-                                <div class="text-white font-bold text-xs leading-tight text-left line-clamp-2 min-h-[2.5rem] mb-0">${escapeHtml(item.title)}</div>
-                                <div class="text-left mt-1">${priceHtml}</div>
+                        card.innerHTML = `
+                            ${badgeHtml}
+                            <div class="relative w-full aspect-square">
+                                ${imgTag}
                             </div>
                             
-                            <div class="mt-auto pt-1 flex justify-start">
-                                <button class="bg-[rgba(0,242,255,0.1)] border border-[#00f2ff] text-[#00f2ff] text-[9px] uppercase px-3 py-1 rounded hover:bg-[rgba(0,242,255,0.2)] transition w-full">
-                                    ПОДРОБНЕЕ
-                                </button>
+                            <div class="p-3 flex flex-col flex-1">
+                                <div class="mb-1">
+                                    <div class="text-white font-bold text-xs leading-tight text-left line-clamp-2 h-8 mb-0">${escapeHtml(item.title)}</div>
+                                    <div class="text-left -mt-1">${priceHtml}</div>
+                                </div>
+                                
+                                <div class="text-gray-400 text-[10px] line-clamp-3 leading-snug mb-3 text-left flex-1">
+                                    ${escapeHtml(item.description)}
+                                </div>
+                                <div class="mt-auto pt-1 flex justify-start">
+                                    <button class="bg-[rgba(0,242,255,0.1)] border border-[#00f2ff] text-[#00f2ff] text-[9px] uppercase px-3 py-1 rounded hover:bg-[rgba(0,242,255,0.2)] transition">
+                                        ПОДРОБНЕЕ
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                    `;
-                    container.appendChild(card);
+                        `;
+                        container.appendChild(card);
+                    }
                 }
-            });
+                
+                index = limit;
+                if (index < items.length) {
+                    requestAnimationFrame(renderChunk);
+                }
+            }
+            requestAnimationFrame(renderChunk);
         }
 
         const repairCache = new Set();
@@ -1677,13 +1779,7 @@
             `;
             
             availableCategories.clear();
-            (tempAppData.mainMenu[idx].items || []).forEach(item => { 
-                if(item.category) {
-                   // Handle array or string
-                   if(Array.isArray(item.category)) item.category.forEach(c => availableCategories.add(c.trim()));
-                   else availableCategories.add(item.category.trim());
-                } 
-            });
+            (tempAppData.mainMenu[idx].items || []).forEach(item => { if(item.category) availableCategories.add(item.category.trim()); });
             renderSubListItems();
         }
 
@@ -1805,25 +1901,6 @@
             btn.items.splice(idx, 1);
             renderSubListItems();
         }
-        
-        function toggleCategory(itemIdx, catName) {
-            const item = tempAppData.mainMenu[currentEditingIndex].items[itemIdx];
-            let current = item.category;
-            
-            // Normalize current to array
-            if (!Array.isArray(current)) {
-                current = current ? [current] : [];
-            }
-            
-            if (current.includes(catName)) {
-                current = current.filter(c => c !== catName);
-            } else {
-                current.push(catName);
-            }
-            
-            tempAppData.mainMenu[currentEditingIndex].items[itemIdx].category = current;
-            renderSubListItems();
-        }
 
         function renderSubListItems() {
             const list = document.getElementById('admin-sublist-items'); list.innerHTML = '';
@@ -1902,24 +1979,9 @@
                         <input type="text" class="admin-input" value="${item.buttonLink||''}" placeholder="TG Username" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].buttonLink=this.value">
                     `;
                 } else if (parentBtn.mode === 'gallery') {
-                     // MULTI-CATEGORY CHECKBOX RENDER
-                     let currentCats = item.category;
-                     if (!Array.isArray(currentCats)) currentCats = currentCats ? [currentCats] : [];
+                     let opts = '<option value="">Без категории</option>';
+                     Array.from(availableCategories).sort().forEach(cat => opts += `<option value="${cat}" ${item.category===cat?'selected':''}>${cat}</option>`);
                      
-                     let catCheckboxes = '<div class="flex flex-wrap gap-2 mb-2 bg-black/20 p-2 rounded max-h-32 overflow-y-auto">';
-                     Array.from(availableCategories).sort().forEach(cat => {
-                        const isChecked = currentCats.includes(cat);
-                        catCheckboxes += `
-                            <div class="flex items-center gap-2 bg-white/5 px-2 py-1 rounded cursor-pointer" onclick="toggleCategory(${idx}, '${cat}')">
-                                <div class="w-4 h-4 rounded border ${isChecked ? 'bg-[var(--neon-color)] border-[var(--neon-color)]' : 'border-gray-500'} flex items-center justify-center">
-                                    ${isChecked ? '<span class="text-black text-[10px]">✔</span>' : ''}
-                                </div>
-                                <span class="text-xs text-gray-300 select-none">${cat}</span>
-                            </div>
-                        `;
-                     });
-                     catCheckboxes += '</div>';
-
                      const images = item.images || (item.imageUrl ? [item.imageUrl] : []);
                      let previews = '';
                      for(let i=0; i<3; i++) {
@@ -1943,10 +2005,7 @@
                         </div>
 
                         <input type="text" class="admin-input" value="${item.title||''}" placeholder="Заголовок (необязательно)" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].title=this.value">
-                        
-                        <label class="admin-label">Категории</label>
-                        ${catCheckboxes}
-                        
+                        <select class="admin-select" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].category=this.value">${opts}</select>
                         <textarea id="prompt-area-${idx}" class="admin-textarea" placeholder="Промпт..." onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].prompt=this.value">${item.prompt||''}</textarea>
                      `;
                 } else {
