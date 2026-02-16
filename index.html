@@ -928,7 +928,8 @@
             if (cachedData) {
                 try {
                     appData = JSON.parse(cachedData);
-                    if(appData.mainMenu) appData.mainMenu.sort((a,b) => (a.order||0) - (b.order||0));
+                    // SORTING FIX: using orderIndex and order for compatibility
+                    if(appData.mainMenu) appData.mainMenu.sort((a,b) => (a.orderIndex || a.order || 0) - (b.orderIndex || b.order || 0));
                     updateUI();
                 } catch(e) { console.error("Cache error", e); }
             }
@@ -942,7 +943,8 @@
 
                 if (doc.exists) {
                     appData = doc.data();
-                    if(appData.mainMenu) appData.mainMenu.sort((a,b) => (a.order||0) - (b.order||0));
+                    // SORTING FIX: using orderIndex and order for compatibility
+                    if(appData.mainMenu) appData.mainMenu.sort((a,b) => (a.orderIndex || a.order || 0) - (b.orderIndex || b.order || 0));
                     await loadHeavyContent();
                     
                     localStorage.setItem('cyber_nav_cache_' + configDocId, JSON.stringify(appData));
@@ -1780,7 +1782,19 @@
         }
 
         function addNewMainMenuButton() {
-            tempAppData.mainMenu.push({ id: Date.now().toString(), title: "Новая кнопка", subtitle: "Описание", iconId: "bolt", iconColor: "text-blue-400", mode: "link", items: [], viewType: 'grid' });
+            // FIX: Assign max order + 1
+            const maxOrder = tempAppData.mainMenu.reduce((max, btn) => Math.max(max, btn.orderIndex || 0), 0);
+            tempAppData.mainMenu.push({ 
+                id: Date.now().toString(), 
+                title: "Новая кнопка", 
+                subtitle: "Описание", 
+                iconId: "bolt", 
+                iconColor: "text-blue-400", 
+                mode: "link", 
+                items: [], 
+                viewType: 'grid',
+                orderIndex: maxOrder + 1 
+            });
             renderAdminMainMenu();
         }
         function removeMainMenuButton(idx) { if(confirm('Удалить?')) { tempAppData.mainMenu.splice(idx, 1); renderAdminMainMenu(); } }
@@ -2143,9 +2157,9 @@
             dataToSave.headerTitle = document.getElementById('admin-header-title').value;
             dataToSave.headerSubtitle = document.getElementById('admin-header-subtitle').value;
 
-            // NEW: Save Order Index
+            // FIX: Explicitly set orderIndex for DB save
             dataToSave.mainMenu.forEach((btn, idx) => {
-                btn.order = idx;
+                btn.orderIndex = idx;
             });
 
             try {
