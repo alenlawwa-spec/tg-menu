@@ -928,6 +928,7 @@
             if (cachedData) {
                 try {
                     appData = JSON.parse(cachedData);
+                    if(appData.mainMenu) appData.mainMenu.sort((a,b) => (a.order||0) - (b.order||0));
                     updateUI();
                 } catch(e) { console.error("Cache error", e); }
             }
@@ -941,6 +942,7 @@
 
                 if (doc.exists) {
                     appData = doc.data();
+                    if(appData.mainMenu) appData.mainMenu.sort((a,b) => (a.order||0) - (b.order||0));
                     await loadHeavyContent();
                     
                     localStorage.setItem('cyber_nav_cache_' + configDocId, JSON.stringify(appData));
@@ -1167,12 +1169,15 @@
             
             const viewType = btnData.viewType || 'grid';
 
-            if (btnData.mode === 'gallery') {
+            if (btnData.mode === 'gallery' || btnData.mode === 'products') {
                 const allItems = btnData.items || [];
-                const categories = ['Все', ...new Set(allItems.map(i => i.category).filter(Boolean))];
+                // NEW: Logic for array categories in both modes
+                const categories = ['Все', ...new Set(allItems.flatMap(i => i.categories || (i.category ? [i.category] : [])).filter(Boolean))];
                 
                 const gridContainer = document.createElement('div');
-                gridContainer.className = viewType === 'list' ? 'gallery-list animate-pulse-enter' : 'gallery-grid animate-pulse-enter';
+                gridContainer.className = btnData.mode === 'gallery' 
+                    ? (viewType === 'list' ? 'gallery-list animate-pulse-enter' : 'gallery-grid animate-pulse-enter')
+                    : (viewType === 'list' ? 'list-view-container pb-24' : 'gallery-grid pb-24');
 
                 if (categories.length > 1) {
                     const filterContainer = document.createElement('div');
@@ -1184,10 +1189,16 @@
                         chip.onclick = (e) => {
                             document.querySelectorAll('.category-chip').forEach(c => c.classList.remove('active'));
                             e.target.classList.add('active');
-                            const filtered = cat === 'Все' ? allItems : allItems.filter(i => i.category === cat);
-                            // Reset grid before rendering filtered
+                            const filtered = cat === 'Все' 
+                                ? allItems 
+                                : allItems.filter(i => (i.categories && i.categories.includes(cat)) || i.category === cat);
+                            
                             gridContainer.innerHTML = '';
-                            renderGalleryItems(filtered, gridContainer, viewType);
+                            if (btnData.mode === 'gallery') {
+                                renderGalleryItems(filtered, gridContainer, viewType);
+                            } else {
+                                renderProductItems(filtered, gridContainer, viewType);
+                            }
                             tg.HapticFeedback.selectionChanged();
                         };
                         filterContainer.appendChild(chip);
@@ -1195,7 +1206,9 @@
                     container.appendChild(filterContainer);
                 }
                 container.appendChild(gridContainer);
-                renderGalleryItems(allItems, gridContainer, viewType);
+                
+                if (btnData.mode === 'gallery') renderGalleryItems(allItems, gridContainer, viewType);
+                else renderProductItems(allItems, gridContainer, viewType);
                 
                 if (btnData.hasMore) {
                     const loadBtn = document.createElement('button');
@@ -1206,21 +1219,6 @@
                     container.appendChild(loadBtn);
                 }
             } 
-            else if (btnData.mode === 'products') {
-                const gridContainer = document.createElement('div');
-                gridContainer.className = viewType === 'list' ? 'list-view-container pb-24' : 'gallery-grid pb-24'; 
-                container.appendChild(gridContainer);
-                renderProductItems(btnData.items || [], gridContainer, viewType);
-
-                if (btnData.hasMore) {
-                    const loadBtn = document.createElement('button');
-                    loadBtn.id = 'btn-load-more';
-                    loadBtn.className = 'btn-save-cyber mt-4 mb-20';
-                    loadBtn.textContent = 'Показать еще';
-                    loadBtn.onclick = () => loadMoreItems(btnData);
-                    container.appendChild(loadBtn);
-                }
-            }
             else if (btnData.mode === 'reviews') {
                 container.className = 'flex flex-col pb-20';
                 const btn = document.createElement('button');
@@ -1801,7 +1799,11 @@
             `;
             
             availableCategories.clear();
-            (tempAppData.mainMenu[idx].items || []).forEach(item => { if(item.category) availableCategories.add(item.category.trim()); });
+            // NEW: Support for multiple categories in collection phase
+            (tempAppData.mainMenu[idx].items || []).forEach(item => {
+                const cats = item.categories || (item.category ? [item.category] : []);
+                cats.forEach(c => { if(c) availableCategories.add(c.trim()); });
+            });
             renderSubListItems();
         }
 
@@ -1933,15 +1935,26 @@
             } else {
                 item.categories.push(cat);
             }
+            // Update dropdown button text count
+            const btn = document.getElementById(`cat-btn-${itemIdx}`);
+            if(btn) btn.innerText = `Выбрано: ${item.categories.length}`;
+        }
+        
+        // NEW: Toggle function for dropdowns
+        function toggleCatDropdown(id) {
+            const el = document.getElementById(id);
+            if(el.classList.contains('hidden')) el.classList.remove('hidden');
+            else el.classList.add('hidden');
         }
 
         function renderSubListItems() {
             const list = document.getElementById('admin-sublist-items'); list.innerHTML = '';
             const parentBtn = tempAppData.mainMenu[currentEditingIndex];
             const isProd = parentBtn.mode === 'products';
+            const isGallery = parentBtn.mode === 'gallery';
             const items = parentBtn.items || [];
             
-            if(parentBtn.mode === 'gallery' || isProd) {
+            if(isGallery || isProd) {
                 const catCreator = document.createElement('div');
                 catCreator.className = 'admin-card mb-4';
                 catCreator.innerHTML = `<div class="admin-section-title text-green-400">Категории</div><div class="flex gap-2"><input type="text" id="new-cat-input" class="admin-input" placeholder="Новая категория..."><button onclick="addNewGlobalCategory()" class="btn-add-cyber" style="width: auto;">+</button></div>`;
@@ -1957,8 +1970,8 @@
                 
                 const deleteButton = `<button onclick="deleteSubItem(${idx})" class="text-red-500 px-2 font-bold">🗑️</button>`;
 
-                if (isProd) {
-                    const images = item.images || [];
+                if (isProd || isGallery) {
+                    const images = item.images || (item.imageUrl ? [item.imageUrl] : []);
                     let previews = '';
                     for(let i=0; i<3; i++) {
                         const bg = images[i] ? `background-image: url('${images[i]}')` : '';
@@ -1966,92 +1979,100 @@
                         previews += `<div class="relative w-16 h-16 bg-black/40 border border-white/20 rounded flex items-center justify-center overflow-hidden bg-cover bg-center" style="${bg}">${deleteBtn}<input type="file" data-slot="${i}" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer" onchange="handleFileUpload(this, ${idx})">${!images[i]?'<span class="text-xs opacity-50">+</span>':''}</div>`;
                     }
 
-                    // CHECKBOXES LOGIC
+                    // MULTI-SELECT DROPDOWN LOGIC
                     const currentCats = item.categories || (item.category ? [item.category] : []);
-                    let catCheckboxes = '<div class="flex flex-wrap gap-2 mb-2">';
+                    
+                    let catCheckboxes = '<div class="p-2">';
                     availableCategories.forEach(cat => {
                         const checked = currentCats.includes(cat) ? 'checked' : '';
-                        catCheckboxes += `<label class="flex items-center gap-1 text-xs bg-white/5 p-1 rounded cursor-pointer select-none"><input type="checkbox" value="${cat}" ${checked} onchange="toggleCategory(${idx}, '${cat}')"> ${cat}</label>`;
+                        catCheckboxes += `<label class="flex items-center gap-2 text-xs text-white p-2 hover:bg-white/10 rounded cursor-pointer select-none"><input type="checkbox" value="${cat}" ${checked} onchange="toggleCategory(${idx}, '${cat}')"> ${cat}</label>`;
                     });
                     catCheckboxes += '</div>';
                     
-                    div.innerHTML = `
-                        <div class="flex justify-between items-start mb-2">
-                             <span class="text-[10px] text-purple-400 font-bold">ТОВАР ${idx+1}</span>
-                             <div class="flex gap-2">
-                                ${upBtn} ${downBtn}
-                                ${deleteButton}
-                             </div>
-                        </div>
-                        <div class="flex gap-2 mb-2">${previews}</div>
-                        <label class="admin-label">Категории</label>
-                        ${catCheckboxes}
-                        <input type="text" class="admin-input" value="${item.title||''}" placeholder="Название" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].title=this.value">
-                        <div class="flex gap-2"><input type="text" class="admin-input" value="${item.price||''}" placeholder="Цена" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].price=this.value"><input type="text" class="admin-input" value="${item.oldPrice||''}" placeholder="Старая цена" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].oldPrice=this.value"></div>
-                        <textarea class="admin-textarea h-16" placeholder="Краткое описание" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].description=this.value">${item.description||''}</textarea>
-                        <textarea class="admin-textarea h-24" placeholder="Полное описание" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].fullDescription=this.value">${item.fullDescription||''}</textarea>
-                        
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <label class="admin-label">Статус</label>
-                                <select class="admin-select" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].status=this.value">
-                                    <option value="" ${!item.status?'selected':''}>Обычный</option>
-                                    <option value="sold" ${item.status==='sold'?'selected':''}>Продано</option>
-                                    <option value="wait" ${item.status==='wait'?'selected':''}>Ожидается</option>
-                                    <option value="order" ${item.status==='order'?'selected':''}>Под заказ</option>
-                                    <option value="noseats" ${item.status==='noseats'?'selected':''}>Мест нет</option>
-                                    <option value="soon" ${item.status==='soon'?'selected':''}>Скоро старт</option>
-                                    <option value="open" ${item.status==='open'?'selected':''}>Запись открыта</option>
-                                    <option value="empty" ${item.status==='empty'?'selected':''}>Пусто</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="admin-label">Цвет плашки</label>
-                                <select class="admin-select" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].badgeColor=this.value">
-                                    <option value="" ${!item.badgeColor?'selected':''}>Стандарт</option>
-                                    <option value="red" ${item.badgeColor==='red'?'selected':''}>🔴 Красный</option>
-                                    <option value="green" ${item.badgeColor==='green'?'selected':''}>🟢 Зеленый</option>
-                                    <option value="blue" ${item.badgeColor==='blue'?'selected':''}>🔵 Синий</option>
-                                    <option value="white" ${item.badgeColor==='white'?'selected':''}>⚪ Белый</option>
-                                    <option value="yellow" ${item.badgeColor==='yellow'?'selected':''}>🟡 Желтый</option>
-                                    <option value="cyan" ${item.badgeColor==='cyan'?'selected':''}>💠 Голубой</option>
-                                </select>
+                    const dropdownHtml = `
+                        <div class="relative mb-2">
+                            <label class="admin-label">Категории</label>
+                            <button id="cat-btn-${idx}" onclick="toggleCatDropdown('cat-drop-${idx}')" class="admin-input text-left flex justify-between items-center">
+                                <span>Выбрано: ${currentCats.length}</span>
+                                <span class="text-xs">▼</span>
+                            </button>
+                            <div id="cat-drop-${idx}" class="hidden absolute top-full left-0 right-0 bg-[#1a1a1a] border border-gray-700 rounded-b-lg shadow-xl z-50 max-h-48 overflow-y-auto">
+                                ${catCheckboxes}
                             </div>
                         </div>
-
-                        <input type="text" class="admin-input" value="${item.buttonText||'Купить'}" placeholder="Текст кнопки" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].buttonText=this.value">
-                        <input type="text" class="admin-input" value="${item.buttonLink||''}" placeholder="TG Username" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].buttonLink=this.value">
                     `;
-                } else if (parentBtn.mode === 'gallery') {
-                     let opts = '<option value="">Без категории</option>';
-                     Array.from(availableCategories).sort().forEach(cat => opts += `<option value="${cat}" ${item.category===cat?'selected':''}>${cat}</option>`);
-                     
-                     const images = item.images || (item.imageUrl ? [item.imageUrl] : []);
-                     let previews = '';
-                     for(let i=0; i<3; i++) {
-                        const bg = images[i] ? `background-image: url('${images[i]}')` : '';
-                        const deleteBtn = images[i] ? `<button onclick="removeImage(${idx}, ${i})" class="absolute top-0 right-0 bg-red-500/80 text-white w-5 h-5 flex items-center justify-center rounded-bl-lg hover:bg-red-600 transition z-20">×</button>` : '';
-                        previews += `<div class="relative w-16 h-16 bg-black/40 border border-white/20 rounded flex items-center justify-center overflow-hidden bg-cover bg-center" style="${bg}">${deleteBtn}<input type="file" data-slot="${i}" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer" onchange="handleFileUpload(this, ${idx})">${!images[i]?'<span class="text-xs opacity-50">+</span>':''}</div>`;
-                     }
+                    
+                    if (isProd) {
+                        div.innerHTML = `
+                            <div class="flex justify-between items-start mb-2">
+                                 <span class="text-[10px] text-purple-400 font-bold">ТОВАР ${idx+1}</span>
+                                 <div class="flex gap-2">
+                                    ${upBtn} ${downBtn}
+                                    ${deleteButton}
+                                 </div>
+                            </div>
+                            <div class="flex gap-2 mb-2">${previews}</div>
+                            
+                            ${dropdownHtml}
 
-                     div.innerHTML = `
-                        <div class="flex justify-between items-start mb-2">
-                             <span class="text-[10px] font-bold">СЛАЙД ${idx+1}</span>
-                             <div class="flex gap-2">
-                                ${upBtn} ${downBtn}
-                                ${deleteButton}
-                             </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="admin-label mb-2">Фото</label>
-                            <div class="flex gap-2">${previews}</div>
-                        </div>
+                            <input type="text" class="admin-input" value="${item.title||''}" placeholder="Название" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].title=this.value">
+                            <div class="flex gap-2"><input type="text" class="admin-input" value="${item.price||''}" placeholder="Цена" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].price=this.value"><input type="text" class="admin-input" value="${item.oldPrice||''}" placeholder="Старая цена" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].oldPrice=this.value"></div>
+                            <textarea class="admin-textarea h-16" placeholder="Краткое описание" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].description=this.value">${item.description||''}</textarea>
+                            <textarea class="admin-textarea h-24" placeholder="Полное описание" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].fullDescription=this.value">${item.fullDescription||''}</textarea>
+                            
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="admin-label">Статус</label>
+                                    <select class="admin-select" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].status=this.value">
+                                        <option value="" ${!item.status?'selected':''}>Обычный</option>
+                                        <option value="sold" ${item.status==='sold'?'selected':''}>Продано</option>
+                                        <option value="wait" ${item.status==='wait'?'selected':''}>Ожидается</option>
+                                        <option value="order" ${item.status==='order'?'selected':''}>Под заказ</option>
+                                        <option value="noseats" ${item.status==='noseats'?'selected':''}>Мест нет</option>
+                                        <option value="soon" ${item.status==='soon'?'selected':''}>Скоро старт</option>
+                                        <option value="open" ${item.status==='open'?'selected':''}>Запись открыта</option>
+                                        <option value="empty" ${item.status==='empty'?'selected':''}>Пусто</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="admin-label">Цвет плашки</label>
+                                    <select class="admin-select" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].badgeColor=this.value">
+                                        <option value="" ${!item.badgeColor?'selected':''}>Стандарт</option>
+                                        <option value="red" ${item.badgeColor==='red'?'selected':''}>🔴 Красный</option>
+                                        <option value="green" ${item.badgeColor==='green'?'selected':''}>🟢 Зеленый</option>
+                                        <option value="blue" ${item.badgeColor==='blue'?'selected':''}>🔵 Синий</option>
+                                        <option value="white" ${item.badgeColor==='white'?'selected':''}>⚪ Белый</option>
+                                        <option value="yellow" ${item.badgeColor==='yellow'?'selected':''}>🟡 Желтый</option>
+                                        <option value="cyan" ${item.badgeColor==='cyan'?'selected':''}>💠 Голубой</option>
+                                    </select>
+                                </div>
+                            </div>
 
-                        <input type="text" class="admin-input" value="${item.title||''}" placeholder="Заголовок (необязательно)" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].title=this.value">
-                        <select class="admin-select" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].category=this.value">${opts}</select>
-                        <textarea id="prompt-area-${idx}" class="admin-textarea" placeholder="Промпт..." onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].prompt=this.value">${item.prompt||''}</textarea>
-                     `;
+                            <input type="text" class="admin-input" value="${item.buttonText||'Купить'}" placeholder="Текст кнопки" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].buttonText=this.value">
+                            <input type="text" class="admin-input" value="${item.buttonLink||''}" placeholder="TG Username" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].buttonLink=this.value">
+                        `;
+                    } else { // Gallery
+                         div.innerHTML = `
+                            <div class="flex justify-between items-start mb-2">
+                                 <span class="text-[10px] font-bold">СЛАЙД ${idx+1}</span>
+                                 <div class="flex gap-2">
+                                    ${upBtn} ${downBtn}
+                                    ${deleteButton}
+                                 </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="admin-label mb-2">Фото</label>
+                                <div class="flex gap-2">${previews}</div>
+                            </div>
+
+                            <input type="text" class="admin-input" value="${item.title||''}" placeholder="Заголовок (необязательно)" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].title=this.value">
+                            
+                            ${dropdownHtml}
+
+                            <textarea id="prompt-area-${idx}" class="admin-textarea" placeholder="Промпт..." onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].prompt=this.value">${item.prompt||''}</textarea>
+                         `;
+                    }
                 } else {
                      div.innerHTML = `
                         <div class="flex gap-2 items-center">
@@ -2082,7 +2103,7 @@
             const mode = tempAppData.mainMenu[currentEditingIndex].mode;
             const newId = 'item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
             const newItem = mode === 'products' 
-                ? { id: newId, title: 'Товар', price: '', status: '', images: [], createdAt: new Date().toISOString() } 
+                ? { id: newId, title: 'Товар', price: '', status: '', images: [], categories: [], createdAt: new Date().toISOString() } 
                 : { id: newId, title: 'Новый', link: '', createdAt: new Date().toISOString() };
             tempAppData.mainMenu[currentEditingIndex].items.unshift(newItem);
             renderSubListItems();
@@ -2121,6 +2142,11 @@
             const dataToSave = JSON.parse(JSON.stringify(tempAppData));
             dataToSave.headerTitle = document.getElementById('admin-header-title').value;
             dataToSave.headerSubtitle = document.getElementById('admin-header-subtitle').value;
+
+            // NEW: Save Order Index
+            dataToSave.mainMenu.forEach((btn, idx) => {
+                btn.order = idx;
+            });
 
             try {
                 const savePromises = [];
