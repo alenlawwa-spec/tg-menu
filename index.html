@@ -564,7 +564,7 @@
             border-top: 1px solid rgba(0, 242, 255, 0.4);
             padding: 12px 16px;
             padding-bottom: calc(12px + env(safe-area-inset-bottom));
-            display: flex;
+            display: none; /* FIX: Hidden by default! */
             gap: 10px;
         }
 
@@ -672,19 +672,13 @@
     </div>
 
     <div id="admin-page" class="page hidden-bottom" style="background: rgba(5,5,8,0.98); z-index: 50; padding-bottom: 0;">
-        <header class="mb-8 flex justify-between items-center sticky top-0 bg-[#050508] py-4 z-20 border-b border-white/5">
-            <div>
-                <h2 class="text-2xl font-bold text-white tracking-tight">
-                    Terminal
-                    <span id="admin-net-status" class="admin-status-indicator admin-status-bad" onclick="forceReconnect()" title="Нажми для реконнекта"></span>
-                </h2>
-                <div class="text-[10px] text-cyan-400 font-mono">ACCESS GRANTED // ADMIN_MODE</div>
-            </div>
-            <div class="flex gap-2">
-                <button onclick="openModeration()" class="bg-blue-900/30 border border-blue-500/30 text-blue-400 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">🛡️ Модерация</button>
-                <button onclick="closeAdmin()" class="bg-white/5 w-10 h-10 rounded-full flex items-center justify-center text-gray-400">✕</button>
-            </div>
-        </header>
+        <!-- Header REMOVED for cleanup -->
+        <div class="pt-8 px-2">
+            <h2 class="text-2xl font-bold text-white tracking-tight mb-4">
+                Terminal
+                <span id="admin-net-status" class="admin-status-indicator admin-status-bad" onclick="forceReconnect()" title="Нажми для реконнекта"></span>
+            </h2>
+        </div>
 
         <div id="admin-content-main" class="z-10 pb-24">
             <div class="admin-card">
@@ -706,8 +700,6 @@
         </div>
 
         <div id="admin-content-sublist" class="hidden z-10 pb-24">
-            <button onclick="backToMainAdmin()" class="text-gray-400 text-xs mb-4 flex items-center gap-2">‹ Назад</button>
-            
             <div class="admin-card">
                 <div class="admin-section-title text-pink-500" id="admin-sublist-title">Редактор списка</div>
                 <div id="admin-sublist-items" class="space-y-4"></div>
@@ -715,7 +707,6 @@
         </div>
 
         <div id="admin-content-moderation" class="hidden z-10">
-             <button onclick="backToMainAdmin()" class="text-gray-400 text-xs mb-4 flex items-center gap-2">‹ Назад к меню</button>
              <div class="admin-section-title text-yellow-400">Модерация отзывов</div>
              <div id="moderation-list" class="space-y-4 pb-32"></div>
         </div>
@@ -723,7 +714,7 @@
         <div id="save-status" class="text-center text-xs text-cyan-400 mt-4 opacity-0 transition-opacity font-mono absolute bottom-20 left-0 right-0 pointer-events-none">DB_SYNC_COMPLETE</div>
     </div>
 
-    <!-- MOVED STICKY BAR OUTSIDE ADMIN PAGE FOR TRUE FIXED POSITIONING -->
+    <!-- ADMIN STICKY BAR - CONTROL CENTER -->
     <div id="admin-sticky-bar" class="hidden"></div>
 
     <canvas id="compress-canvas" style="display: none;"></canvas>
@@ -1335,10 +1326,12 @@
             
             // INIT STICKY BAR FOR MAIN MENU
             const bar = document.getElementById('admin-sticky-bar');
-            bar.classList.remove('hidden');
+            bar.style.display = 'flex'; // Force show
             bar.innerHTML = `
                 <button onclick="addNewMainMenuButton()" class="btn-add-cyber" style="flex:1; margin-top:0;"><span>⚡</span> Блок</button>
+                <button onclick="openModeration()" class="btn-save-cyber" style="flex:1; margin-top:0; background: rgba(255,0,122,0.1); border: 1px solid var(--neon-pink); color: var(--neon-pink);">🛡️ Мод</button>
                 <button onclick="saveAdminData()" id="btn-save-global" class="btn-save-cyber" style="flex:2; margin-top:0;">💾 Сохранить</button>
+                <button onclick="closeAdmin()" class="btn-delete-icon" style="background:rgba(255,255,255,0.1); border-radius:12px; width:50px; margin-top:0;">✕</button>
             `;
         }
 
@@ -1438,6 +1431,7 @@
             const bar = document.getElementById('admin-sticky-bar');
             bar.innerHTML = `
                 <button onclick="addNewSubItem()" class="btn-add-cyber" style="flex:1; margin-top:0;"><span>+</span> Элемент</button>
+                <button onclick="backToMainAdmin()" class="btn-save-cyber" style="flex:1; margin-top:0; background: rgba(255,255,255,0.1); border: 1px solid white;">‹ Назад</button>
                 <button onclick="saveAdminData()" id="btn-save-sub" class="btn-save-cyber" style="flex:2; margin-top:0;">💾 Сохранить</button>
             `;
             
@@ -1714,17 +1708,19 @@
             
             // RESET STICKY BAR TO MAIN MENU
             const bar = document.getElementById('admin-sticky-bar');
-            bar.classList.remove('hidden'); // Show bar
+            bar.style.display = 'flex'; // Ensure visible
             bar.innerHTML = `
                 <button onclick="addNewMainMenuButton()" class="btn-add-cyber" style="flex:1; margin-top:0;"><span>⚡</span> Блок</button>
+                <button onclick="openModeration()" class="btn-save-cyber" style="flex:1; margin-top:0; background: rgba(255,0,122,0.1); border: 1px solid var(--neon-pink); color: var(--neon-pink);">🛡️ Мод</button>
                 <button onclick="saveAdminData()" id="btn-save-global" class="btn-save-cyber" style="flex:2; margin-top:0;">💾 Сохранить</button>
+                <button onclick="closeAdmin()" class="btn-delete-icon" style="background:rgba(255,255,255,0.1); border-radius:12px; width:50px; margin-top:0;">✕</button>
             `;
             
             renderAdminMainMenu();
         }
         function closeAdmin() { 
             document.getElementById('admin-page').classList.replace('active-modal', 'hidden-bottom'); 
-            document.getElementById('admin-sticky-bar').classList.add('hidden');
+            document.getElementById('admin-sticky-bar').style.display = 'none'; // FIX: Hide
         }
 
         async function saveAdminData() {
@@ -1802,8 +1798,16 @@
         function openModeration() {
             document.getElementById('admin-content-main').classList.add('hidden');
             document.getElementById('admin-content-moderation').classList.remove('hidden');
-            // Hide sticky bar in moderation mode
-            document.getElementById('admin-sticky-bar').classList.add('hidden');
+            
+            // FIX: Show sticky bar with moderation buttons
+            const bar = document.getElementById('admin-sticky-bar');
+            bar.style.display = 'flex';
+            bar.innerHTML = `
+                <button onclick="backToMainAdmin()" class="btn-save-cyber" style="flex:1; margin-top:0; background: rgba(255,255,255,0.1); border: 1px solid white;">‹ Назад</button>
+                <button onclick="approveAll()" class="btn-save-cyber" style="flex:2; margin-top:0;">✅ Одобрить все</button>
+                <button onclick="closeAdmin()" class="btn-delete-icon" style="background:rgba(255,255,255,0.1); border-radius:12px; width:50px; margin-top:0;">✕</button>
+            `;
+            
             loadModerationList();
         }
 
@@ -1868,6 +1872,19 @@
                 approved: true, 
                 admin_id: ADMIN_ID // CRITICAL FIX: ADMIN_ID
             }).then(() => { tg.showAlert("Одобрено"); loadModerationList(); }); 
+        }
+        
+        function approveAll() {
+             if(!confirm("Одобрить все ожидающие отзывы?")) return;
+             db.collection('reviews').where('approved', '==', false).get().then(snap => {
+                 if(snap.empty) return tg.showAlert("Нечего одобрять");
+                 const batch = db.batch();
+                 snap.forEach(doc => batch.update(doc.ref, { approved: true, admin_id: ADMIN_ID }));
+                 batch.commit().then(() => {
+                     tg.showAlert("Все отзывы одобрены!");
+                     loadModerationList();
+                 });
+             });
         }
         
         function deleteReview(id) { 
