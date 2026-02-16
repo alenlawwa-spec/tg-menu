@@ -272,7 +272,8 @@
             border-color: rgba(0, 242, 255, 0.4); box-shadow: 0 0 15px rgba(0, 242, 255, 0.2);
         }
 
-        .gallery-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding-bottom: 80px; }
+        /* UPDATED GRID FOR ANDROID */
+        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; padding-bottom: 80px; }
         
         .gallery-list { display: flex; flex-direction: column; gap: 6px; padding-bottom: 80px; }
         
@@ -956,11 +957,23 @@
                 if (['gallery', 'products'].includes(btn.mode) && btn.id) {
                     const colName = btn.mode === 'gallery' ? 'prompts' : 'products';
                     try {
-                        const snap = await db.collection(colName)
-                            .where('parentId', '==', btn.id)
-                            .orderBy('createdAt', 'desc')
-                            .limit(20)
-                            .get();
+                        let snap;
+                        try {
+                            snap = await db.collection(colName)
+                                .where('parentId', '==', btn.id)
+                                .orderBy('createdAt', 'desc')
+                                .limit(20)
+                                .get();
+                        } catch (e) {
+                             console.log("Sort query failed, retrying without sort", e);
+                        }
+
+                        if (!snap || snap.empty) {
+                             snap = await db.collection(colName)
+                                .where('parentId', '==', btn.id)
+                                .limit(20)
+                                .get();
+                        }
 
                         const items = [];
                         snap.forEach(d => {
@@ -995,12 +1008,21 @@
             const colName = btn.mode === 'gallery' ? 'prompts' : 'products';
             
             try {
-                const snap = await db.collection(colName)
-                    .where('parentId', '==', btn.id)
-                    .orderBy('createdAt', 'desc')
-                    .startAfter(btn.lastVisible)
-                    .limit(20)
-                    .get();
+                let snap;
+                try {
+                    snap = await db.collection(colName)
+                        .where('parentId', '==', btn.id)
+                        .orderBy('createdAt', 'desc')
+                        .startAfter(btn.lastVisible)
+                        .limit(20)
+                        .get();
+                } catch(e) {
+                    snap = await db.collection(colName)
+                        .where('parentId', '==', btn.id)
+                        .startAfter(btn.lastVisible)
+                        .limit(20)
+                        .get();
+                }
 
                 const newItems = [];
                 snap.forEach(d => {
@@ -1241,7 +1263,7 @@
                     const div = document.createElement('div');
                     div.onclick = () => openGalleryModal(imgUrl, item.prompt);
 
-                    const imgTag = `<img src="${item.image || ''}" loading="lazy" class="w-full h-full object-cover object-top ${viewType === 'list' ? 'rounded-md' : 'transition-transform duration-500 group-hover:scale-110'} img-placeholder" onload="this.classList.remove('img-placeholder')" onerror="this.src='https://via.placeholder.com/150?text=Error'">`;
+                    const imgTag = `<img src="${item.image || ''}" loading="lazy" class="w-full h-full object-cover object-top ${viewType === 'list' ? 'rounded-md' : 'transition-transform duration-500 group-hover:scale-110'} img-placeholder" onload="this.classList.remove('img-placeholder')" onerror="this.src='https://via.placeholder.com/300?text=Error'">`;
 
                     if (viewType === 'list') {
                         div.className = 'bg-black/40 p-3 rounded-lg border border-gray-800 flex flex-row gap-3 relative';
@@ -1332,7 +1354,7 @@
                         badgeHtml = `<div ${styleAttr}>${statusData.label}</div>`;
                     }
                     
-                    const imgTag = `<img src="${mainImg || 'https://via.placeholder.com/400'}" loading="lazy" class="w-full h-full object-cover object-top img-placeholder ${viewType === 'list' ? 'rounded-md' : ''}" onload="this.classList.remove('img-placeholder')" onerror="this.src='https://via.placeholder.com/400?text=N/A'">`;
+                    const imgTag = `<img src="${mainImg || 'https://via.placeholder.com/400'}" loading="lazy" class="w-full h-full object-cover object-top img-placeholder ${viewType === 'list' ? 'rounded-md' : ''}" onload="this.classList.remove('img-placeholder')" onerror="this.src='https://via.placeholder.com/300?text=Error'">`;
 
                     if (viewType === 'list') {
                         const card = document.createElement('div');
@@ -1902,13 +1924,24 @@
             renderSubListItems();
         }
 
+        function toggleCategory(itemIdx, cat) {
+            const item = tempAppData.mainMenu[currentEditingIndex].items[itemIdx];
+            if (!item.categories) item.categories = [];
+            
+            if (item.categories.includes(cat)) {
+                item.categories = item.categories.filter(c => c !== cat);
+            } else {
+                item.categories.push(cat);
+            }
+        }
+
         function renderSubListItems() {
             const list = document.getElementById('admin-sublist-items'); list.innerHTML = '';
             const parentBtn = tempAppData.mainMenu[currentEditingIndex];
             const isProd = parentBtn.mode === 'products';
             const items = parentBtn.items || [];
             
-            if(parentBtn.mode === 'gallery') {
+            if(parentBtn.mode === 'gallery' || isProd) {
                 const catCreator = document.createElement('div');
                 catCreator.className = 'admin-card mb-4';
                 catCreator.innerHTML = `<div class="admin-section-title text-green-400">Категории</div><div class="flex gap-2"><input type="text" id="new-cat-input" class="admin-input" placeholder="Новая категория..."><button onclick="addNewGlobalCategory()" class="btn-add-cyber" style="width: auto;">+</button></div>`;
@@ -1932,6 +1965,15 @@
                         const deleteBtn = images[i] ? `<button onclick="removeImage(${idx}, ${i})" class="absolute top-0 right-0 bg-red-500/80 text-white w-5 h-5 flex items-center justify-center rounded-bl-lg hover:bg-red-600 transition z-20">×</button>` : '';
                         previews += `<div class="relative w-16 h-16 bg-black/40 border border-white/20 rounded flex items-center justify-center overflow-hidden bg-cover bg-center" style="${bg}">${deleteBtn}<input type="file" data-slot="${i}" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer" onchange="handleFileUpload(this, ${idx})">${!images[i]?'<span class="text-xs opacity-50">+</span>':''}</div>`;
                     }
+
+                    // CHECKBOXES LOGIC
+                    const currentCats = item.categories || (item.category ? [item.category] : []);
+                    let catCheckboxes = '<div class="flex flex-wrap gap-2 mb-2">';
+                    availableCategories.forEach(cat => {
+                        const checked = currentCats.includes(cat) ? 'checked' : '';
+                        catCheckboxes += `<label class="flex items-center gap-1 text-xs bg-white/5 p-1 rounded cursor-pointer select-none"><input type="checkbox" value="${cat}" ${checked} onchange="toggleCategory(${idx}, '${cat}')"> ${cat}</label>`;
+                    });
+                    catCheckboxes += '</div>';
                     
                     div.innerHTML = `
                         <div class="flex justify-between items-start mb-2">
@@ -1942,6 +1984,8 @@
                              </div>
                         </div>
                         <div class="flex gap-2 mb-2">${previews}</div>
+                        <label class="admin-label">Категории</label>
+                        ${catCheckboxes}
                         <input type="text" class="admin-input" value="${item.title||''}" placeholder="Название" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].title=this.value">
                         <div class="flex gap-2"><input type="text" class="admin-input" value="${item.price||''}" placeholder="Цена" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].price=this.value"><input type="text" class="admin-input" value="${item.oldPrice||''}" placeholder="Старая цена" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].oldPrice=this.value"></div>
                         <textarea class="admin-textarea h-16" placeholder="Краткое описание" onchange="tempAppData.mainMenu[${currentEditingIndex}].items[${idx}].description=this.value">${item.description||''}</textarea>
