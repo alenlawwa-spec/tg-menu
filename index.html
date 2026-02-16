@@ -551,21 +551,64 @@
             margin-top: 2px;
         }
 
-        /* ADMIN STICKY BAR CSS - FIXED */
+        /* ADMIN STICKY BAR CSS - REFINED */
         #admin-sticky-bar {
             position: fixed !important;
             bottom: 0 !important;
             left: 0;
             right: 0;
             z-index: 99999;
-            background: rgba(10, 10, 10, 0.9);
+            background: rgba(10, 10, 10, 0.75); /* User request: 0.75 opacity */
             backdrop-filter: blur(15px);
             -webkit-backdrop-filter: blur(15px);
-            border-top: 1px solid rgba(0, 242, 255, 0.4);
-            padding: 12px 16px;
-            padding-bottom: calc(12px + env(safe-area-inset-bottom));
-            display: none; /* FIX: Hidden by default! */
-            gap: 10px;
+            border-top: 1px solid rgba(0, 242, 255, 0.2); /* Subtle border */
+            box-shadow: 0 -5px 20px rgba(0, 242, 255, 0.05); /* Light neon glow top */
+            padding: 8px 12px; /* User request: 8px 12px */
+            padding-bottom: calc(8px + env(safe-area-inset-bottom));
+            display: none;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .admin-bar-btn {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.03);
+            border: 0.5px solid rgba(255, 255, 255, 0.2); /* User request: 0.5px solid */
+            color: #ccc;
+            font-size: 10px; /* User request: 9-10px */
+            font-weight: 600;
+            text-transform: uppercase; /* User request: uppercase */
+            letter-spacing: 0.05em; /* User request: 0.05em */
+            padding: 8px 0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s;
+            cursor: pointer;
+            height: 32px; /* Fixed compact height */
+            white-space: nowrap;
+        }
+        .admin-bar-btn:active { transform: scale(0.96); background: rgba(255,255,255,0.1); }
+        
+        .admin-bar-btn.primary {
+            background: rgba(0, 242, 255, 0.08);
+            border-color: rgba(0, 242, 255, 0.4);
+            color: var(--neon-color);
+            flex: 2; /* Save buttons usually wider */
+        }
+        
+        .admin-bar-btn.accent {
+            background: rgba(255, 0, 122, 0.08);
+            border-color: rgba(255, 0, 122, 0.4);
+            color: var(--neon-pink);
+        }
+
+        .admin-bar-btn.close {
+            flex: 0 0 32px; /* Square-ish */
+            border-color: rgba(255, 77, 77, 0.3);
+            color: #ff4d4d;
         }
 
     </style>
@@ -1327,11 +1370,12 @@
             // INIT STICKY BAR FOR MAIN MENU
             const bar = document.getElementById('admin-sticky-bar');
             bar.style.display = 'flex'; // Force show
+            // REPLACED: New minimalist buttons
             bar.innerHTML = `
-                <button onclick="addNewMainMenuButton()" class="btn-add-cyber" style="flex:1; margin-top:0;"><span>⚡</span> Блок</button>
-                <button onclick="openModeration()" class="btn-save-cyber" style="flex:1; margin-top:0; background: rgba(255,0,122,0.1); border: 1px solid var(--neon-pink); color: var(--neon-pink);">🛡️ Мод</button>
-                <button onclick="saveAdminData()" id="btn-save-global" class="btn-save-cyber" style="flex:2; margin-top:0;">💾 Сохранить</button>
-                <button onclick="closeAdmin()" class="btn-delete-icon" style="background:rgba(255,255,255,0.1); border-radius:12px; width:50px; margin-top:0;">✕</button>
+                <button onclick="addNewMainMenuButton()" class="admin-bar-btn"><span>+</span> Блок</button>
+                <button onclick="openModeration()" class="admin-bar-btn accent">🛡️ Мод</button>
+                <button onclick="saveAdminData()" id="btn-save-global" class="admin-bar-btn primary">💾 Сохранить</button>
+                <button onclick="closeAdmin()" class="admin-bar-btn close">✕</button>
             `;
         }
 
@@ -1429,10 +1473,11 @@
             
             // UPDATE STICKY BAR FOR SUBLIST
             const bar = document.getElementById('admin-sticky-bar');
+            // REPLACED: New minimalist buttons
             bar.innerHTML = `
-                <button onclick="addNewSubItem()" class="btn-add-cyber" style="flex:1; margin-top:0;"><span>+</span> Элемент</button>
-                <button onclick="backToMainAdmin()" class="btn-save-cyber" style="flex:1; margin-top:0; background: rgba(255,255,255,0.1); border: 1px solid white;">‹ Назад</button>
-                <button onclick="saveAdminData()" id="btn-save-sub" class="btn-save-cyber" style="flex:2; margin-top:0;">💾 Сохранить</button>
+                <button onclick="addNewSubItem()" class="admin-bar-btn"><span>+</span> Элемент</button>
+                <button onclick="backToMainAdmin()" class="admin-bar-btn">‹ Назад</button>
+                <button onclick="saveAdminData()" id="btn-save-sub" class="admin-bar-btn primary">💾 Сохранить</button>
             `;
             
             availableCategories.clear();
@@ -1709,11 +1754,12 @@
             // RESET STICKY BAR TO MAIN MENU
             const bar = document.getElementById('admin-sticky-bar');
             bar.style.display = 'flex'; // Ensure visible
+            // REPLACED: New minimalist buttons
             bar.innerHTML = `
-                <button onclick="addNewMainMenuButton()" class="btn-add-cyber" style="flex:1; margin-top:0;"><span>⚡</span> Блок</button>
-                <button onclick="openModeration()" class="btn-save-cyber" style="flex:1; margin-top:0; background: rgba(255,0,122,0.1); border: 1px solid var(--neon-pink); color: var(--neon-pink);">🛡️ Мод</button>
-                <button onclick="saveAdminData()" id="btn-save-global" class="btn-save-cyber" style="flex:2; margin-top:0;">💾 Сохранить</button>
-                <button onclick="closeAdmin()" class="btn-delete-icon" style="background:rgba(255,255,255,0.1); border-radius:12px; width:50px; margin-top:0;">✕</button>
+                <button onclick="addNewMainMenuButton()" class="admin-bar-btn"><span>+</span> Блок</button>
+                <button onclick="openModeration()" class="admin-bar-btn accent">🛡️ Мод</button>
+                <button onclick="saveAdminData()" id="btn-save-global" class="admin-bar-btn primary">💾 Сохранить</button>
+                <button onclick="closeAdmin()" class="admin-bar-btn close">✕</button>
             `;
             
             renderAdminMainMenu();
@@ -1802,10 +1848,11 @@
             // FIX: Show sticky bar with moderation buttons
             const bar = document.getElementById('admin-sticky-bar');
             bar.style.display = 'flex';
+            // REPLACED: New minimalist buttons
             bar.innerHTML = `
-                <button onclick="backToMainAdmin()" class="btn-save-cyber" style="flex:1; margin-top:0; background: rgba(255,255,255,0.1); border: 1px solid white;">‹ Назад</button>
-                <button onclick="approveAll()" class="btn-save-cyber" style="flex:2; margin-top:0;">✅ Одобрить все</button>
-                <button onclick="closeAdmin()" class="btn-delete-icon" style="background:rgba(255,255,255,0.1); border-radius:12px; width:50px; margin-top:0;">✕</button>
+                <button onclick="backToMainAdmin()" class="admin-bar-btn">‹ Назад</button>
+                <button onclick="approveAll()" class="admin-bar-btn primary">✅ Одобрить всё</button>
+                <button onclick="closeAdmin()" class="admin-bar-btn close">✕</button>
             `;
             
             loadModerationList();
