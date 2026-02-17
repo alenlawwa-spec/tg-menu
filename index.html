@@ -210,7 +210,7 @@
             transition: background-color 0.3s;
         }
 
-        .admin-input, .admin-textarea, .admin-select {
+        .admin-input, .admin-textarea {
             width: 100%;
             background: rgba(0,0,0,0.4);
             border: 1px solid rgba(255,255,255,0.1);
@@ -220,6 +220,31 @@
             margin-bottom: 8px;
             font-size: 13px;
         }
+        
+        /* UPDATED ADMIN SELECT STYLE */
+        .admin-select {
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.5) !important;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.15) !important;
+            color: #eee !important;
+            border-radius: 10px !important;
+            padding: 10px 12px;
+            outline: none;
+            margin-bottom: 8px;
+            font-size: 13px;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 12px;
+        }
+        .admin-select option {
+            background-color: #111;
+            color: white;
+        }
+
         .admin-textarea { resize: vertical; min-height: 60px; }
         .admin-label { font-size: 10px; color: #777; margin-bottom: 4px; margin-left: 4px; display: block; text-transform: uppercase; }
 
@@ -249,6 +274,50 @@
         .btn-edit-list {
             background: rgba(255, 0, 122, 0.1); color: var(--neon-pink); border: 1px solid rgba(255, 0, 122, 0.3);
             border-radius: 10px; padding: 8px; width: 100%; font-size: 12px; margin-top: 5px;
+        }
+
+        /* NEW BUTTON STYLES */
+        .btn-glass-more {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 99px;
+            padding: 10px 24px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin: 20px auto 40px auto;
+            display: block;
+            transition: all 0.3s ease;
+            width: fit-content;
+        }
+        .btn-glass-more:active {
+            background: rgba(0, 242, 255, 0.1);
+            border-color: rgba(0, 242, 255, 0.3);
+            color: #00f2ff;
+            transform: scale(0.96);
+        }
+        .btn-glass-more:disabled { opacity: 0.5; }
+        
+        .btn-glass-card {
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.7);
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            transition: all 0.3s;
+        }
+        .btn-glass-card:active, .btn-glass-card:hover {
+            background: rgba(0, 242, 255, 0.15);
+            border-color: rgba(0, 242, 255, 0.5);
+            color: #00f2ff;
+            box-shadow: 0 0 10px rgba(0, 242, 255, 0.2);
         }
 
         .icon-box {
@@ -1215,7 +1284,8 @@
                 if (btnData.hasMore) {
                     const loadBtn = document.createElement('button');
                     loadBtn.id = 'btn-load-more';
-                    loadBtn.className = 'btn-save-cyber mt-4 mb-8';
+                    // UPDATED STYLE CLASS
+                    loadBtn.className = 'btn-glass-more';
                     loadBtn.textContent = 'Показать еще';
                     loadBtn.onclick = () => loadMoreItems(btnData);
                     container.appendChild(loadBtn);
@@ -1277,7 +1347,7 @@
                                     <div class="text-gray-400 text-[10px] leading-snug line-clamp-3 text-left">${item.description || ''}</div>
                                 </div>
                                 <div class="flex justify-end mt-2">
-                                    <button class="bg-[rgba(0,242,255,0.1)] border border-[#00f2ff] text-[#00f2ff] text-[10px] uppercase px-3 py-1 rounded shadow-[0_0_5px_rgba(0,242,255,0.2)]">
+                                    <button class="btn-glass-card">
                                         ПОДРОБНЕЕ
                                     </button>
                                 </div>
@@ -1290,7 +1360,7 @@
                             <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent flex flex-col justify-end p-3">
                                 <div class="text-white font-bold text-[10px] leading-tight mb-2 text-left line-clamp-2">${item.title || ''}</div>
                                 <div class="flex justify-start">
-                                    <button class="bg-[rgba(0,242,255,0.1)] border border-[#00f2ff] text-[#00f2ff] text-[8px] uppercase px-2 py-1 rounded">
+                                    <button class="btn-glass-card">
                                         ПОДРОБНЕЕ
                                     </button>
                                 </div>
@@ -1380,7 +1450,7 @@
                                 </div>
                                 
                                 <div class="flex justify-end mt-2">
-                                    <button class="bg-[rgba(0,242,255,0.1)] border border-[#00f2ff] text-[#00f2ff] text-[10px] uppercase px-3 py-1 rounded shadow-[0_0_5px_rgba(0,242,255,0.2)]">
+                                    <button class="btn-glass-card">
                                         ПОДРОБНЕЕ
                                     </button>
                                 </div>
@@ -1411,7 +1481,7 @@
                                     ${escapeHtml(item.description)}
                                 </div>
                                 <div class="mt-auto pt-1 flex justify-start">
-                                    <button class="bg-[rgba(0,242,255,0.1)] border border-[#00f2ff] text-[#00f2ff] text-[9px] uppercase px-3 py-1 rounded hover:bg-[rgba(0,242,255,0.2)] transition">
+                                    <button class="btn-glass-card">
                                         ПОДРОБНЕЕ
                                     </button>
                                 </div>
@@ -1799,11 +1869,14 @@
         }
         function removeMainMenuButton(idx) { if(confirm('Удалить?')) { tempAppData.mainMenu.splice(idx, 1); renderAdminMainMenu(); } }
 
-        function editSubList(idx) {
+        // UPDATED: Now async to fetch full list
+        async function editSubList(idx) {
             currentEditingIndex = idx;
             document.getElementById('admin-content-main').classList.add('hidden');
             document.getElementById('admin-content-sublist').classList.remove('hidden');
-            document.getElementById('admin-sublist-title').textContent = tempAppData.mainMenu[idx].title;
+            
+            const btn = tempAppData.mainMenu[idx];
+            document.getElementById('admin-sublist-title').textContent = btn.title;
             
             const bar = document.getElementById('admin-sticky-bar');
             bar.innerHTML = `
@@ -1812,12 +1885,49 @@
                 <button onclick="saveAdminData()" id="btn-save-sub" class="admin-bar-btn primary">💾 Сохранить</button>
             `;
             
-            availableCategories.clear();
-            // NEW: Support for multiple categories in collection phase
-            (tempAppData.mainMenu[idx].items || []).forEach(item => {
-                const cats = item.categories || (item.category ? [item.category] : []);
-                cats.forEach(c => { if(c) availableCategories.add(c.trim()); });
-            });
+            // ADMIN FETCH LOGIC
+            if (['gallery', 'products'].includes(btn.mode) && btn.id) {
+                const listContainer = document.getElementById('admin-sublist-items');
+                listContainer.innerHTML = '<div class="spinner relative left-1/2 -ml-5 mt-10"></div><div class="text-center mt-16 text-xs text-gray-500">Загрузка полного списка...</div>';
+                
+                const colName = btn.mode === 'gallery' ? 'prompts' : 'products';
+                try {
+                    // Fetch up to 100 for admin editing
+                    const snap = await db.collection(colName)
+                        .where('parentId', '==', btn.id)
+                        .orderBy('createdAt', 'desc')
+                        .limit(100) 
+                        .get();
+                    
+                    const fullItems = [];
+                    snap.forEach(d => {
+                        let item = d.data();
+                        item.id = d.id;
+                        fullItems.push(item);
+                    });
+                    
+                    // Replace local temp items with full items
+                    tempAppData.mainMenu[idx].items = fullItems;
+                    
+                    // Re-calc categories
+                    availableCategories.clear();
+                    fullItems.forEach(item => {
+                        const cats = item.categories || (item.category ? [item.category] : []);
+                        cats.forEach(c => { if(c) availableCategories.add(c.trim()); });
+                    });
+                    
+                } catch(e) {
+                    console.error("Admin load error", e);
+                    // Fallback to what we have in memory if fetch fails
+                }
+            } else {
+                 availableCategories.clear();
+                (btn.items || []).forEach(item => {
+                    const cats = item.categories || (item.category ? [item.category] : []);
+                    cats.forEach(c => { if(c) availableCategories.add(c.trim()); });
+                });
+            }
+
             renderSubListItems();
         }
 
@@ -2015,7 +2125,7 @@
                                 <span>Выбрано: ${currentCats.length}</span>
                                 <span class="text-xs">▼</span>
                             </button>
-                            <div id="cat-drop-${idx}" class="hidden absolute top-full left-0 right-0 bg-[#1a1a1a] border border-gray-700 rounded-b-lg shadow-xl z-50 max-h-48 overflow-y-auto">
+                            <div id="cat-drop-${idx}" class="hidden absolute top-full left-0 right-0 bg-[#0f0f0f]/90 backdrop-blur-md border border-gray-700 rounded-b-lg shadow-xl z-50 max-h-48 overflow-y-auto">
                                 ${catCheckboxes}
                             </div>
                         </div>
