@@ -1830,20 +1830,25 @@
                 img.onload = () => {
                     const canvas = document.getElementById('compress-canvas');
                     const ctx = canvas.getContext('2d');
+                    
+                    // БЫЛО 800, ДЕЛАЕМ 600 (Для телефона за глаза!)
+                    const MAX_SIDE = 600;
+                    
                     let w = img.width, h = img.height;
-                    const MAX_SIDE = 800;
                     if (w > h) {
                         if (w > MAX_SIDE) { h = Math.round(h * (MAX_SIDE / w)); w = MAX_SIDE; }
                     } else {
                         if (h > MAX_SIDE) { w = Math.round(w * (MAX_SIDE / h)); h = MAX_SIDE; }
                     }
-                    canvas.width = w; canvas.height = h;
+                    canvas.width = w;
+                    canvas.height = h;
                     ctx.drawImage(img, 0, 0, w, h);
                     
-                    let quality = 0.5;
+                    let quality = 0.7; 
                     let dataUrl = canvas.toDataURL('image/jpeg', quality);
-
-                    while (dataUrl.length > 900000 && quality > 0.1) {
+                    
+                    // БЫЛО 900000, ДЕЛАЕМ 150000 (150 Кб - это в 6 раз легче!)
+                    while (dataUrl.length > 150000 && quality > 0.1) {
                         quality -= 0.1;
                         dataUrl = canvas.toDataURL('image/jpeg', quality);
                     }
