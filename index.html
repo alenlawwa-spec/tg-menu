@@ -54,6 +54,11 @@
         }
 
         .upload-progress { display: none; }
+        
+        /* SCROLLBAR FOR MODAL */
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
 
         .bg-glow {
             position: fixed;
@@ -221,7 +226,6 @@
             font-size: 13px;
         }
         
-        /* UPDATED ADMIN SELECT STYLE */
         .admin-select {
             width: 100%;
             background-color: rgba(0, 0, 0, 0.5) !important;
@@ -267,16 +271,15 @@
             display: flex; align-items: center; justify-content: center; gap: 8px;
         }
 
-        /* UPDATED: CYAN GHOST STYLE (For "BUY") */
         .btn-save-cyber {
-            background: rgba(6, 182, 212, 0.2); /* bg-cyan-500/20 */
+            background: rgba(6, 182, 212, 0.2); 
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(6, 182, 212, 0.5); /* border-cyan-500/50 */
-            color: #67e8f9; /* text-cyan-300 */
+            border: 1px solid rgba(6, 182, 212, 0.5); 
+            color: #67e8f9; 
             font-weight: 700;
             padding: 14px; 
-            border-radius: 16px; /* rounded-2xl */
+            border-radius: 16px; 
             width: 100%; 
             margin-top: 10px; 
             text-transform: uppercase; 
@@ -285,8 +288,8 @@
         }
         .btn-save-cyber:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); }
         .btn-save-cyber:active {
-            background: rgba(0, 0, 0, 0.8); /* active:bg-black/80 */
-            color: white; /* active:text-white */
+            background: rgba(0, 0, 0, 0.8); 
+            color: white; 
             border-color: rgba(255, 255, 255, 0.2);
             transform: scale(0.98);
             box-shadow: none;
@@ -297,7 +300,6 @@
             border-radius: 10px; padding: 8px; width: 100%; font-size: 12px; margin-top: 5px;
         }
 
-        /* NEW BUTTON STYLES */
         .btn-glass-more {
             background: rgba(255, 255, 255, 0.03);
             backdrop-filter: blur(10px);
@@ -322,7 +324,7 @@
         }
         .btn-glass-more:disabled { opacity: 0.5; }
         
-        /* UPDATED: BLACK GLASS STYLE (For "DETAILS") - MADE MORE TRANSPARENT + GLOW */
+        /* UPDATED: STRONGER GLOW FOR "MORE" BUTTONS */
         .btn-glass-card {
             background: rgba(0, 0, 0, 0.25);
             backdrop-filter: blur(8px);
@@ -335,12 +337,12 @@
             text-transform: uppercase;
             letter-spacing: 0.05em;
             transition: all 0.3s;
-            box-shadow: 0 0 15px rgba(0,242,255,0.3); /* TASK 3: GLOW */
+            box-shadow: 0 0 20px rgba(0,242,255,0.4); /* Stronger glow */
         }
         .btn-glass-card:active, .btn-glass-card:hover {
             background: rgba(20, 20, 20, 0.8);
             border-color: rgba(255, 255, 255, 0.3);
-            box-shadow: 0 0 20px rgba(0,242,255,0.6); /* TASK 3: HOVER GLOW */
+            box-shadow: 0 0 30px rgba(0,242,255,0.7);
         }
 
         .icon-box {
@@ -364,11 +366,8 @@
             border-color: rgba(0, 242, 255, 0.4); box-shadow: 0 0 15px rgba(0, 242, 255, 0.2);
         }
 
-        /* UPDATED GRID FOR ANDROID */
         .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; padding-bottom: 80px; }
-        
         .gallery-list { display: flex; flex-direction: column; gap: 6px; padding-bottom: 80px; }
-        
         .list-view-container { display: flex; flex-direction: column; gap: 16px; padding-bottom: 80px; }
 
         .gallery-item {
@@ -383,7 +382,6 @@
             object-position: top !important; 
         }
 
-        /* NEW PLACEHOLDER CLASS */
         .img-placeholder {
             background-color: #1a1a1a;
             transition: opacity 0.3s;
@@ -423,14 +421,13 @@
             font-style: italic; color: #ccc; font-size: 13px; line-height: 1.6; white-space: pre-wrap;
         }
         
-        /* UPDATED: BRIGHTER PINK STYLE (For "COPY PROMPT") */
         .btn-copy {
             position: fixed; bottom: 30px; left: 20px; right: 20px;
-            background: rgba(219, 39, 119, 0.6); /* pink-600/60 */
+            background: rgba(219, 39, 119, 0.6);
             backdrop-filter: blur(4px);
             -webkit-backdrop-filter: blur(4px);
-            border: 1px solid rgb(244, 114, 182); /* border-pink-400 */
-            color: white; /* text-white */
+            border: 1px solid rgb(244, 114, 182);
+            color: white; 
             padding: 14px; 
             border-radius: 16px; 
             font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px;
@@ -466,12 +463,11 @@
         .review-text { font-size: 13px; line-height: 1.4; color: #ddd; word-wrap: break-word; }
         .stars { color: var(--neon-yellow); font-size: 12px; letter-spacing: 2px; }
 
-        /* UPDATED: PINK GLASS (For "WRITE REVIEW" Open) - Same as Copy Prompt */
         .btn-write-review {
-            background: rgba(219, 39, 119, 0.6); /* pink-600/60 */
+            background: rgba(219, 39, 119, 0.6); 
             backdrop-filter: blur(12px); 
             -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgb(244, 114, 182); /* border-pink-400 */
+            border: 1px solid rgb(244, 114, 182); 
             color: white; 
             font-weight: 700;
             padding: 14px; 
@@ -576,72 +572,6 @@
         }
         .product-slider::-webkit-scrollbar { display: none; }
 
-        /* --- UPDATED PRODUCT MODAL CSS (TASK 1: FLEX COL + STICKY) --- */
-        #product-modal {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6);
-            z-index: 250; 
-            opacity: 0; pointer-events: none;
-            transition: opacity 0.3s;
-            overflow: hidden;
-        }
-        #product-modal.active-modal { opacity: 1; pointer-events: all; }
-
-        .product-modal-image-area {
-            width: 100%;
-            height: 60vh;
-            position: absolute;
-            top: 0;
-            left: 0;
-            transform-origin: center top; 
-            will-change: transform;
-        }
-
-        .product-modal-panel {
-            position: absolute; 
-            bottom: 0; left: 0; right: 0;
-            height: 95vh; 
-            background: rgba(10, 10, 15, 0.85);
-            backdrop-filter: blur(25px);
-            -webkit-backdrop-filter: blur(25px);
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            border-top-left-radius: 30px;
-            border-top-right-radius: 30px;
-            display: flex;
-            flex-direction: column; /* TASK 1: FLEX COLUMN */
-            z-index: 20;
-            box-shadow: 0 -10px 40px rgba(0,0,0,0.6);
-            transform: translateY(100%);
-            will-change: transform;
-            touch-action: none; 
-        }
-
-        .ios-handle {
-            width: 40px; height: 5px;
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 10px;
-            margin: 12px auto;
-            flex-shrink: 0;
-            cursor: grab;
-        }
-
-        #product-modal-slider {
-            height: 100%;
-            gap: 0;
-            padding-bottom: 0;
-        }
-        .product-slide { 
-            flex: 0 0 100%; 
-            scroll-snap-align: center; 
-            overflow: hidden; 
-            background: #000; 
-            border: none;
-            border-radius: 0;
-            height: 100%;
-        }
-        .product-slide img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
-
-
         .admin-status-indicator {
             width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-left: 8px;
             cursor: pointer; transition: transform 0.2s;
@@ -649,8 +579,6 @@
         .admin-status-indicator:active { transform: scale(0.8); }
         .admin-status-ok { background: #39ff14; box-shadow: 0 0 5px #39ff14; }
         .admin-status-bad { background: #ff4d4d; box-shadow: 0 0 5px #ff4d4d; }
-
-        /* --- NEW UI ELEMENTS --- */
 
         .list-item {
             display: flex;
@@ -823,41 +751,9 @@
         </div>
     </div>
 
-    <!-- UPDATED PRODUCT MODAL HTML (TASK 1: Structure) -->
-    <div id="product-modal">
-        <!-- Close Button -->
-        <button onclick="closeProductModal()" class="absolute top-4 right-4 z-50 w-10 h-10 bg-black/40 rounded-full text-white flex items-center justify-center backdrop-blur-md border border-white/10 active:scale-90 transition-transform">✕</button>
-
-        <!-- Image Area -->
-        <div class="product-modal-image-area">
-            <div class="product-slider" id="product-modal-slider"></div>
-            <div id="product-modal-hint" class="absolute bottom-12 left-0 right-0 text-center text-[10px] text-white/70 z-10 pointer-events-none drop-shadow-md">Листай фото →</div>
-        </div>
-
-        <!-- Overlay Panel (Sheet) -->
-        <div class="product-modal-panel" id="product-sheet-panel">
-            <div class="ios-handle" id="product-sheet-handle"></div>
-            
-            <!-- DIV 1: Scrollable Content (Header + Desc) TASK 1 -->
-            <div class="flex-1 overflow-y-auto p-6 custom-scrollbar" id="product-sheet-content">
-                <div class="product-header-area p-0 pb-4"> <!-- Reset padding as parent has p-6 -->
-                    <h2 id="product-modal-title" class="text-2xl font-bold text-white mb-1 leading-tight text-left"></h2> <!-- TASK 2: text-left -->
-                    <div class="flex items-baseline gap-3 text-left"> <!-- TASK 2: text-left -->
-                        <span id="product-modal-price" class="text-3xl text-[#00f2ff] font-bold tracking-tight"></span>
-                        <span id="product-modal-old-price" class="text-sm text-gray-500 line-through"></span>
-                    </div>
-                </div>
-                
-                 <p id="product-modal-desc" class="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap font-light pb-4 text-left"></p> <!-- TASK 2: text-left -->
-            </div>
-
-            <!-- DIV 2: Footer (Classes requested by user) TASK 1 -->
-            <div class="w-full p-4 sticky bottom-0 bg-black/95 backdrop-blur-md border-t border-white/10 z-50">
-                <button id="product-buy-btn" class="btn-save-cyber w-full shadow-[0_0_20px_rgba(0,242,255,0.15)] active:scale-[0.98]">
-                    Купить
-                </button>
-            </div>
-        </div>
+    <!-- NEW PRODUCT MODAL STRUCTURE (FOR USER'S FUNCTION) -->
+    <div id="modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+        <div id="modalContent" class="w-full max-w-lg"></div>
     </div>
 
     <div id="review-write-modal">
@@ -875,7 +771,6 @@
             <input type="radio" id="star1" name="rating" value="1"><label for="star1">★</label>
         </div>
         <textarea id="review-text-input" class="admin-textarea bg-white/10 mb-6" placeholder="Напишите что-нибудь приятное..."></textarea>
-        <!-- UPDATED: BUTTON CLASS TO PURPLE GLASS -->
         <button onclick="submitReview()" class="btn-write-review">Отправить ✨</button>
         <button onclick="closeReviewModal()" class="text-gray-500 text-sm mt-4">Отмена</button>
     </div>
@@ -1000,9 +895,9 @@
                 tg.ready();
                 tg.BackButton.onClick(() => {
                     const galleryModal = document.getElementById('gallery-modal');
-                    const productModal = document.getElementById('product-modal');
+                    const modal = document.getElementById('modal');
                     if (galleryModal.classList.contains('active-modal')) closeGalleryModal();
-                    else if (productModal.classList.contains('active-modal')) closeProductModal();
+                    else if (modal && !modal.classList.contains('hidden')) closeModal();
                     else hideSubPage();
                 });
             } else {
@@ -1024,7 +919,6 @@
             if (cachedData) {
                 try {
                     appData = JSON.parse(cachedData);
-                    // SORTING FIX: using orderIndex and order for compatibility
                     if(appData.mainMenu) appData.mainMenu.sort((a,b) => (a.orderIndex || a.order || 0) - (b.orderIndex || b.order || 0));
                     updateUI();
                 } catch(e) { console.error("Cache error", e); }
@@ -1039,7 +933,6 @@
 
                 if (doc.exists) {
                     appData = doc.data();
-                    // SORTING FIX: using orderIndex and order for compatibility
                     if(appData.mainMenu) appData.mainMenu.sort((a,b) => (a.orderIndex || a.order || 0) - (b.orderIndex || b.order || 0));
                     await loadHeavyContent();
                     
@@ -1269,7 +1162,6 @@
 
             if (btnData.mode === 'gallery' || btnData.mode === 'products') {
                 const allItems = btnData.items || [];
-                // NEW: Logic for array categories in both modes
                 const categories = ['Все', ...new Set(allItems.flatMap(i => i.categories || (i.category ? [i.category] : [])).filter(Boolean))];
                 
                 const gridContainer = document.createElement('div');
@@ -1311,7 +1203,6 @@
                 if (btnData.hasMore) {
                     const loadBtn = document.createElement('button');
                     loadBtn.id = 'btn-load-more';
-                    // UPDATED STYLE CLASS
                     loadBtn.className = 'btn-glass-more';
                     loadBtn.textContent = 'Показать еще';
                     loadBtn.onclick = () => loadMoreItems(btnData);
@@ -1360,7 +1251,6 @@
                     const div = document.createElement('div');
                     div.onclick = () => openGalleryModal(imgUrl, item.prompt);
 
-                    // UPDATED IMG TAG: ADDED INLINE STYLE FOR ASPECT RATIO
                     const imgTag = `<img src="${item.image || ''}" loading="lazy" style="aspect-ratio: 1/1; width: 100%; height: 100%; object-fit: cover;" class="${viewType === 'list' ? 'rounded-md' : 'transition-transform duration-500 group-hover:scale-110'} img-placeholder" onload="this.classList.remove('img-placeholder')" onerror="this.src='https://via.placeholder.com/300?text=Error'">`;
 
                     if (viewType === 'list') {
@@ -1437,6 +1327,10 @@
                 for (let i = index; i < limit; i++) {
                     const item = items[i];
                     const mainImg = (item.images && item.images.length > 0) ? item.images[0] : item.imageUrl;
+                    
+                    // PREPARE ITEM FOR USER'S MODAL FUNCTION
+                    item.image = mainImg || 'https://via.placeholder.com/400';
+
                     const statusData = STATUS_MAP[item.status];
                     
                     let badgeHtml = '';
@@ -1452,13 +1346,14 @@
                         badgeHtml = `<div ${styleAttr}>${statusData.label}</div>`;
                     }
                     
-                    // UPDATED IMG TAG: ADDED INLINE STYLE FOR ASPECT RATIO
                     const imgTag = `<img src="${mainImg || 'https://via.placeholder.com/400'}" loading="lazy" style="aspect-ratio: 1/1; width: 100%; height: 100%; object-fit: cover;" class="${viewType === 'list' ? 'rounded-md' : ''} img-placeholder" onload="this.classList.remove('img-placeholder')" onerror="this.src='https://via.placeholder.com/300?text=Error'">`;
 
                     if (viewType === 'list') {
                         const card = document.createElement('div');
                         card.className = 'bg-black/40 p-3 rounded-lg border border-gray-800 flex flex-row gap-3 relative cursor-pointer'; 
-                        card.onclick = () => openProductModal(item);
+                        
+                        // UPDATED CLICK HANDLER TO NEW FUNCTION
+                        card.onclick = () => showProductModal(item);
                         
                         const listBadge = badgeHtml ? badgeHtml.replace('product-badge', 'product-badge scale-75 origin-top-right absolute top-2 right-2') : '';
 
@@ -1489,9 +1384,11 @@
 
                     } else {
                         const card = document.createElement('div');
-                        // UPDATED: Added overflow-hidden and bg-[#111] for Android fix
                         card.className = 'product-card cursor-pointer flex flex-col h-full relative overflow-hidden bg-[#111] rounded-xl border border-white/10'; 
-                        card.onclick = () => openProductModal(item);
+                        
+                        // UPDATED CLICK HANDLER TO NEW FUNCTION
+                        card.onclick = () => showProductModal(item);
+
                         let priceHtml = `<span class="text-[var(--neon-color)] font-bold text-sm">${item.price || ''}</span>`;
                         if(item.oldPrice) priceHtml += ` <span class="text-gray-500 text-[10px] line-through ml-1">${item.oldPrice}</span>`;
                         
@@ -1598,168 +1495,50 @@
         }
         function closeGalleryModal() { document.getElementById('gallery-modal').classList.remove('active-modal'); }
 
-        function openProductModal(item) {
-            tg.HapticFeedback.impactOccurred('medium');
+        // --- NEW USER FUNCTION ---
+        function showProductModal(p) {
+            const modal = document.getElementById('modal');
+            const content = document.getElementById('modalContent');
             
-            // Set data (TASK 2: Alignment forced in HTML, just setting text here)
-            document.getElementById('product-modal-title').textContent = item.title;
-            document.getElementById('product-modal-desc').textContent = item.fullDescription || item.description;
-            document.getElementById('product-modal-price').textContent = item.price;
-            const oldPriceEl = document.getElementById('product-modal-old-price');
-            if (item.oldPrice) { oldPriceEl.textContent = item.oldPrice; oldPriceEl.style.display = 'inline'; }
-            else oldPriceEl.style.display = 'none';
+            // ВНИМАНИЕ: h-[85vh] - это то, что держит высоту окна фиксированной!
+            // flex-col делит окно на две части: скролл (верх) и кнопка (низ).
+            content.innerHTML = `
+                <div class="flex flex-col h-[85vh] bg-[#0a0a0b] rounded-2xl overflow-hidden">
+                    
+                    <div class="flex-1 overflow-y-auto custom-scrollbar relative">
+                        
+                        <div class="relative w-full">
+                            <img src="${p.image}" class="w-full aspect-square object-cover">
+                            <button onclick="closeModal()" class="absolute top-4 right-4 bg-black/60 p-2 rounded-full border border-white/20 z-20 backdrop-blur-md">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            </button>
+                        </div>
 
-            // Setup Slider
-            const slider = document.getElementById('product-modal-slider');
-            slider.innerHTML = '';
-            const images = (item.images && item.images.length > 0) ? item.images : [item.imageUrl];
-            images.forEach(imgUrl => {
-                if(!imgUrl) return;
-                const slide = document.createElement('div');
-                slide.className = 'product-slide';
-                slide.innerHTML = `<img src="${imgUrl}" loading="lazy">`;
-                slider.appendChild(slide);
-            });
-            const hintText = document.getElementById('product-modal-hint');
-            hintText.style.display = images.length > 1 ? 'block' : 'none';
+                        <div class="p-6 text-left">
+                            <h3 class="text-2xl font-bold text-white mb-2 leading-tight text-left">${p.title}</h3>
+                            <p class="text-cyan-400 text-xl font-bold mb-4 text-left">${p.price} ₽</p>
+                            <div class="text-gray-300 text-sm leading-relaxed text-left opacity-90 pb-4">
+                                ${p.description}
+                            </div>
+                        </div>
+                    </div>
 
-            // Setup Buy Button
-            const btn = document.getElementById('product-buy-btn');
-            btn.textContent = item.buttonText || "Купить";
-            btn.onclick = () => {
-                tg.HapticFeedback.notificationOccurred('success');
-                if (item.buttonLink) {
-                    const cleanLink = item.buttonLink.replace('https://t.me/', '').replace('@', '');
-                    const text = `Привет! Хочу заказать: ${item.title}`;
-                    tg.openTelegramLink(`https://t.me/${cleanLink}?text=${encodeURIComponent(text)}`);
-                } else tg.showAlert("Связь с продавцом не настроена");
-            };
-
-            // --- PHYSICS LOGIC START ---
-            const panel = document.getElementById('product-sheet-panel');
-            const content = document.getElementById('product-sheet-content'); // Scroll content is now just this div (TASK 1)
-            const imageArea = document.querySelector('.product-modal-image-area');
-
-            // Constants
-            const SHEET_HEIGHT_VH = 95; 
-            const COLLAPSED_VISIBLE_VH = 50; 
-            const screenH = window.innerHeight;
-            const maxH = screenH * (SHEET_HEIGHT_VH / 100);
-            const minH = screenH * (COLLAPSED_VISIBLE_VH / 100);
-            const hiddenTranslate = maxH - minH; // Pixel value to shift down
+                    <div class="p-4 bg-[#0a0a0b] border-t border-white/10 shrink-0 z-50">
+                        <a href="${p.link}" target="_blank" class="block w-full text-center py-4 rounded-xl font-bold bg-cyan-500 text-white shadow-[0_0_20px_rgba(6,182,212,0.4)] hover:shadow-[0_0_30px_rgba(6,182,212,0.6)] transition-all">
+                            ${p.category === 'products' ? 'Купить' : 'Заказать'}
+                        </a>
+                    </div>
+                </div>
+            `;
             
-            // Initial State (Collapsed)
-            let currentTranslate = hiddenTranslate;
-            panel.style.transition = 'none';
-            panel.style.transform = `translateY(${currentTranslate}px)`;
-            
-            imageArea.style.transition = 'none';
-            imageArea.style.transform = 'scale(1)';
-
-            // Touch State
-            let startY = 0;
-            let startTranslate = 0;
-            let isDragging = false;
-            let startTime = 0;
-
-            const onTouchStart = (e) => {
-                const touch = e.changedTouches[0];
-                // Allow scrolling content if not at top
-                if (content.contains(e.target)) {
-                    if (content.scrollTop > 0) return;
-                }
-                
-                isDragging = true;
-                startY = touch.clientY;
-                startTranslate = currentTranslate;
-                startTime = Date.now();
-                
-                panel.style.transition = 'none';
-                imageArea.style.transition = 'none';
-            };
-
-            const onTouchMove = (e) => {
-                if (!isDragging) return;
-                const touch = e.changedTouches[0];
-                const delta = touch.clientY - startY;
-
-                // If user swipes down while inside content at top -> trigger drag
-                if (content.contains(e.target) && content.scrollTop > 0) {
-                    isDragging = false;
-                    return;
-                }
-                // Prevent overscroll of body
-                if (e.cancelable) e.preventDefault();
-
-                let newTranslate = startTranslate + delta;
-
-                // Resistance/Constraint at top (0)
-                if (newTranslate < 0) newTranslate = newTranslate * 0.4;
-                
-                // Apply Transform
-                panel.style.transform = `translateY(${newTranslate}px)`;
-
-                // Image Effect: Scale down when sheet goes up (translate -> 0)
-                // 0 translate = 0.95 scale, hiddenTranslate = 1 scale
-                const progress = 1 - Math.min(Math.max(newTranslate / hiddenTranslate, 0), 1);
-                const scale = 1 - (progress * 0.05);
-                const brightness = 1 - (progress * 0.2); // Darken slightly
-                
-                imageArea.style.transform = `scale(${scale})`;
-                imageArea.style.filter = `brightness(${brightness})`;
-            };
-
-            const onTouchEnd = (e) => {
-                if (!isDragging) return;
-                isDragging = false;
-                
-                // Physics / Snapping
-                const touch = e.changedTouches[0];
-                const delta = touch.clientY - startY;
-                const time = Date.now() - startTime;
-                const velocity = Math.abs(delta) / time;
-                
-                let targetTranslate = currentTranslate;
-                
-                // Determine direction
-                // If velocity high -> snap to direction
-                if (velocity > 0.5) {
-                    if (delta > 0) targetTranslate = hiddenTranslate; // Down -> Collapse
-                    else targetTranslate = 0; // Up -> Expand
-                } else {
-                    // Snap to closest
-                    const currentPos = startTranslate + delta;
-                    const midPoint = hiddenTranslate / 2;
-                    if (currentPos > midPoint) targetTranslate = hiddenTranslate;
-                    else targetTranslate = 0;
-                }
-                
-                // Apply Final with Smooth Transition
-                panel.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1)';
-                panel.style.transform = `translateY(${targetTranslate}px)`;
-                
-                imageArea.style.transition = 'transform 0.4s ease, filter 0.4s ease';
-                
-                const finalScale = targetTranslate === 0 ? 0.95 : 1;
-                const finalBright = targetTranslate === 0 ? 0.8 : 1;
-                imageArea.style.transform = `scale(${finalScale})`;
-                imageArea.style.filter = `brightness(${finalBright})`;
-                
-                currentTranslate = targetTranslate;
-                
-                // Haptic on snap
-                tg.HapticFeedback.selectionChanged();
-            };
-
-            // Bind Events (Overwrite previous to avoid stacking)
-            panel.ontouchstart = onTouchStart;
-            panel.ontouchmove = onTouchMove;
-            panel.ontouchend = onTouchEnd;
-            // --- PHYSICS LOGIC END ---
-
-            document.getElementById('product-modal').classList.add('active-modal');
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden'; 
         }
-        function closeProductModal() { document.getElementById('product-modal').classList.remove('active-modal'); }
+
+        function closeModal() {
+            document.getElementById('modal').classList.add('hidden');
+            document.body.style.overflow = '';
+        }
 
         function copyCurrentPrompt() {
             const text = document.getElementById('modal-prompt-text').textContent;
@@ -1882,7 +1661,6 @@
         }
 
         function addNewMainMenuButton() {
-            // FIX: Assign max order + 1
             const maxOrder = tempAppData.mainMenu.reduce((max, btn) => Math.max(max, btn.orderIndex || 0), 0);
             tempAppData.mainMenu.push({ 
                 id: Date.now().toString(), 
@@ -1899,7 +1677,6 @@
         }
         function removeMainMenuButton(idx) { if(confirm('Удалить?')) { tempAppData.mainMenu.splice(idx, 1); renderAdminMainMenu(); } }
 
-        // UPDATED: Now async to fetch full list
         async function editSubList(idx) {
             currentEditingIndex = idx;
             document.getElementById('admin-content-main').classList.add('hidden');
@@ -1915,14 +1692,12 @@
                 <button onclick="saveAdminData()" id="btn-save-sub" class="admin-bar-btn primary">💾 Сохранить</button>
             `;
             
-            // ADMIN FETCH LOGIC
             if (['gallery', 'products'].includes(btn.mode) && btn.id) {
                 const listContainer = document.getElementById('admin-sublist-items');
                 listContainer.innerHTML = '<div class="spinner relative left-1/2 -ml-5 mt-10"></div><div class="text-center mt-16 text-xs text-gray-500">Загрузка полного списка...</div>';
                 
                 const colName = btn.mode === 'gallery' ? 'prompts' : 'products';
                 try {
-                    // Fetch up to 100 for admin editing with Fallback for indexes
                     let snap;
                     try {
                         snap = await db.collection(colName)
@@ -1945,10 +1720,8 @@
                         fullItems.push(item);
                     });
                     
-                    // Replace local temp items with full items
                     tempAppData.mainMenu[idx].items = fullItems;
                     
-                    // Re-calc categories
                     availableCategories.clear();
                     fullItems.forEach(item => {
                         const cats = item.categories || (item.category ? [item.category] : []);
@@ -1957,7 +1730,6 @@
                     
                 } catch(e) {
                     console.error("Admin load error", e);
-                    // Fallback to what we have in memory if fetch fails
                 }
             } else {
                  availableCategories.clear();
@@ -1980,7 +1752,6 @@
                     const canvas = document.getElementById('compress-canvas');
                     const ctx = canvas.getContext('2d');
                     
-                    // БЫЛО 800, ДЕЛАЕМ 600 (Для телефона за глаза!)
                     const MAX_SIDE = 400;
                     
                     let w = img.width, h = img.height;
@@ -1996,7 +1767,6 @@
                     let quality = 0.7; 
                     let dataUrl = canvas.toDataURL('image/jpeg', quality);
                     
-                    // БЫЛО 900000, ДЕЛАЕМ 150000 (150 Кб - это в 6 раз легче!)
                     while (dataUrl.length > 50000 && quality > 0.1) {
                         quality -= 0.1;
                         dataUrl = canvas.toDataURL('image/jpeg', quality);
@@ -2103,12 +1873,10 @@
             } else {
                 item.categories.push(cat);
             }
-            // Update dropdown button text count
             const btn = document.getElementById(`cat-btn-${itemIdx}`);
             if(btn) btn.innerText = `Выбрано: ${item.categories.length}`;
         }
         
-        // NEW: Toggle function for dropdowns
         function toggleCatDropdown(id) {
             const el = document.getElementById(id);
             if(el.classList.contains('hidden')) el.classList.remove('hidden');
@@ -2147,7 +1915,6 @@
                         previews += `<div class="relative w-16 h-16 bg-black/40 border border-white/20 rounded flex items-center justify-center overflow-hidden bg-cover bg-center" style="${bg}">${deleteBtn}<input type="file" data-slot="${i}" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer" onchange="handleFileUpload(this, ${idx})">${!images[i]?'<span class="text-xs opacity-50">+</span>':''}</div>`;
                     }
 
-                    // MULTI-SELECT DROPDOWN LOGIC
                     const currentCats = item.categories || (item.category ? [item.category] : []);
                     
                     let catCheckboxes = '<div class="p-2">';
@@ -2311,7 +2078,6 @@
             dataToSave.headerTitle = document.getElementById('admin-header-title').value;
             dataToSave.headerSubtitle = document.getElementById('admin-header-subtitle').value;
 
-            // FIX: Explicitly set orderIndex for DB save
             dataToSave.mainMenu.forEach((btn, idx) => {
                 btn.orderIndex = idx;
             });
@@ -2469,7 +2235,6 @@
              });
         }
         
-        // TASK 4: HARD DELETE
         function deleteReview(id) { 
             if(confirm('Удалить?')) {
                 db.collection('reviews').doc(id).delete()
