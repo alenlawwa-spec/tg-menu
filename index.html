@@ -869,22 +869,20 @@
         <div class="product-modal-panel" id="product-sheet-panel">
             <div class="ios-handle" id="product-sheet-handle"></div>
             
-            <!-- Header (Fixed inside panel) -->
-            <div class="product-header-area">
-                <h2 id="product-modal-title" class="text-2xl font-bold text-white mb-1 leading-tight"></h2>
-                <div class="flex items-baseline gap-3">
-                    <span id="product-modal-price" class="text-3xl text-[#00f2ff] font-bold tracking-tight"></span>
-                    <span id="product-modal-old-price" class="text-sm text-gray-500 line-through"></span>
+            <!-- DIV 1: Scrollable Content (Header + Desc) -->
+            <div class="product-scroll-content overflow-y-auto flex-1" id="product-sheet-content">
+                <div class="product-header-area">
+                    <h2 id="product-modal-title" class="text-2xl font-bold text-white mb-1 leading-tight"></h2>
+                    <div class="flex items-baseline gap-3">
+                        <span id="product-modal-price" class="text-3xl text-[#00f2ff] font-bold tracking-tight"></span>
+                        <span id="product-modal-old-price" class="text-sm text-gray-500 line-through"></span>
+                    </div>
                 </div>
-            </div>
-
-            <!-- Scrollable Desc -->
-            <div class="product-scroll-content" id="product-sheet-content">
                 <p id="product-modal-desc" class="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap font-light pb-4"></p>
             </div>
 
-            <!-- Sticky Footer Button (FLEX ITEM AT BOTTOM) -->
-            <div class="product-footer-area">
+            <!-- DIV 2: Footer (Classes requested by user) -->
+            <div class="product-footer-area w-full sticky bottom-0 bg-black/95 p-4 z-50 border-t border-white/10">
                 <button id="product-buy-btn" class="btn-save-cyber w-full shadow-[0_0_20px_rgba(0,242,255,0.15)] active:scale-[0.98]">
                     Купить
                 </button>
