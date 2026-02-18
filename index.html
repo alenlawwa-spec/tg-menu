@@ -17,22 +17,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-/* Глобальное исправление для всех кликабельных элементов */
-.category-scroll-container > div, 
-.icon-picker-btn, 
-.nav-item {
-    box-sizing: border-box !important; /* Чтобы рамка не раздувала элемент */
-    border: 2px solid transparent !important; /* Резервируем место под рамку заранее */
-    transition: all 0.2s ease;
-}
-
-/* Исправляем состояние при нажатии */
-.category-scroll-container > div.active,
-.icon-picker-btn.active,
-.icon-picker-btn.ring-2 {
-    border-color: var(--neon-color) !important; /* Просто красим уже существующую рамку */
-    background: rgba(0, 242, 255, 0.1) !important;
-}
         :root {
             --neon-color: #00f2ff;
             --neon-pink: #ff007a;
@@ -283,28 +267,21 @@
 
         /* ИСПРАВЛЕНИЕ: Центрирование иконок в админке (Task 2) */
         .icon-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 12px; }
-.icon-picker-btn {
-    width: 44px !important;
-    height: 44px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    padding: 0 !important; /* Это критично, чтобы иконка не съезжала */
-    background: rgba(255,255,255,0.05);
-    border-radius: 8px;
-    position: relative;
-    flex-shrink: 0; /* Чтобы кнопка не сплющивалась */
-}
-
-.icon-picker-btn svg {
-    width: 24px !important;
-    height: 24px !important;
-    display: block;
-}
+        
+        /* FIX FOR SHIFTING ISSUE: Added box-sizing and explicit sizing */
+        .icon-picker-btn {
+            aspect-ratio: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.2s;
+            position: relative; overflow: hidden;
+            box-sizing: border-box !important;
+            transform: translateZ(0); /* Prevent sub-pixel jitter */
+        }
         .icon-picker-btn.active { 
             border-color: var(--neon-color); 
             background: rgba(0, 242, 255, 0.2); 
-            box-shadow: 0 0 10px rgba(0, 242, 255, 0.3); 
+            box-shadow: 0 0 10px rgba(0, 242, 255, 0.3);
+            margin: 0 !important; /* Ensure no margin shift */
+            transform: none !important; /* Prevent scaling shift */
         }
         .icon-picker-btn svg { width: 18px; height: 18px; position: relative; z-index: 2; display: block; margin: 0 auto; }
 
@@ -406,27 +383,32 @@
         .title-gradient { background: linear-gradient(135deg, #ffffff 0%, #a1a1a1 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
         /* ИСПРАВЛЕНИЕ: КАТЕГОРИИ (Task 1: padding-left: 16px) */
-.category-scroll-container { 
-    display: flex;
-    gap: 10px; 
-    overflow-x: auto; 
-    width: 100%; /* Сделать ровно по ширине */
-    padding: 0 20px 8px 20px; /* Равномерные отступы */
-    margin: 0; 
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-}
+        .category-scroll-container { 
+            display: flex; 
+            gap: 10px; /* Равномерный отступ */
+            overflow-x: auto; 
+            padding-bottom: 8px; 
+            margin-bottom: 12px; 
+            scrollbar-width: none;
+            width: 100%;
+            padding-left: 16px; /* ИЗМЕНЕНО с 0 на 16px */
+            -webkit-overflow-scrolling: touch;
+        }
         .category-scroll-container::-webkit-scrollbar { display: none; }
         
+        /* FIX FOR SHIFTING ISSUE: Added box-sizing, frozen margins and disabled transform on active */
         .category-chip {
             white-space: nowrap; padding: 6px 16px; border-radius: 999px; font-size: 12px; font-weight: 600;
             cursor: pointer; transition: all 0.2s; border: 1px solid rgba(255,255,255,0.1);
             background: rgba(255,255,255,0.05); backdrop-filter: blur(8px); color: #ccc;
+            box-sizing: border-box !important;
+            transform: translateZ(0); /* Prevent jitter */
         }
         .category-chip.active {
             background: rgba(0, 242, 255, 0.15); color: var(--neon-color);
-            box-shadow: inset 0 0 0 1px rgba(0, 242, 255, 0.4), 0 0 15px rgba(0, 242, 255, 0.2);
-    border-color: transparent;
+            border-color: rgba(0, 242, 255, 0.4); box-shadow: 0 0 15px rgba(0, 242, 255, 0.2);
+            margin: 0 !important; /* Ensure no margin shift */
+            transform: none !important; /* Ensure no scaling shift */
         }
 
         .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; padding-bottom: 80px; }
@@ -1918,7 +1900,11 @@
                 const listContainer = document.getElementById('admin-sublist-items');
                 listContainer.innerHTML = '<div class="spinner relative left-1/2 -ml-5 mt-10"></div><div class="text-center mt-16 text-xs text-gray-500">Загрузка полного списка...</div>';
                 
-                const colName = btn.mode === 'gallery' ? 'prompts' : (btn.mode === 'services' ? 'services' : 'products');
+                // --- FIX: EXPLICIT LOGIC FOR SERVICES ---
+                let colName = 'products'; // Default fallback
+                if (btn.mode === 'gallery') colName = 'prompts';
+                else if (btn.mode === 'services') colName = 'services'; // STRICTLY services
+                
                 try {
                     let snap;
                     try {
