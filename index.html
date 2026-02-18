@@ -1005,7 +1005,7 @@
             { id: 'instagram', svg: '<rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>' },
             { id: 'youtube', svg: '<path d="M2.5 17C2.5 17 2.5 7 2.5 7C2.5 5.34315 3.84315 4 5.5 4H18.5C20.1569 4 21.5 5.34315 21.5 7V17C21.5 18.6569 20.1569 20 18.5 20H5.5C3.84315 20 2.5 18.6569 2.5 17ZM10 8V16L16 12L10 8Z" fill="currentColor"/>' }, 
             { id: 'telegram', svg: '<path d="M21.198 2.433a2.242 2.242 0 0 0-1.022.215l-16.5 6.75c-.92.376-.91 1.055-.16 1.43l4.33 1.353 10.033-6.326c.475-.29.911-.134.555.182l-8.13 7.34-.316 4.478c.438 0 .633-.2.88-.44l2.12-2.058 4.408 3.254c.438-.448 1.4.217 1.6-.758l2.9-13.68c.273-1.08-.41-1.574-1.108-1.23z"></path>' },
-            { id: 'globe', svg: '<circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10 15.3 15.3 0 0 1 4-10z"></path>' },
+            { id: 'globe', svg: '<path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10z"/>' },
             { id: 'gift', svg: '<polyline points="20 12 20 22 4 22 4 12"></polyline><rect x="2" y="7" width="20" height="5"></rect><line x1="12" y1="22" x2="12" y2="7"></line><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>' },
             { id: 'shopping-bag', svg: '<path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path>' } 
         ];
@@ -1907,18 +1907,26 @@
                 
                 try {
                     let snap;
-                    try {
-                        snap = await db.collection(colName)
-                            .where('parentId', '==', btn.id)
+                    // Modified Logic Here
+                    if (colName === 'services') {
+                         snap = await db.collection(colName)
                             .orderBy('createdAt', 'desc')
                             .limit(100)
                             .get();
-                    } catch (e) {
-                         console.warn("Sorting failed, loading unsorted items...");
-                         snap = await db.collection(colName)
-                            .where('parentId', '==', btn.id)
-                            .limit(100)
-                            .get();
+                    } else {
+                        try {
+                            snap = await db.collection(colName)
+                                .where('parentId', '==', btn.id)
+                                .orderBy('createdAt', 'desc')
+                                .limit(100)
+                                .get();
+                        } catch (e) {
+                             console.warn("Sorting failed, loading unsorted items...");
+                             snap = await db.collection(colName)
+                                .where('parentId', '==', btn.id)
+                                .limit(100)
+                                .get();
+                        }
                     }
                     
                     const fullItems = [];
@@ -2131,10 +2139,10 @@
 
                     const currentCats = item.categories || (item.category ? [item.category] : []);
                     
-                    let catCheckboxes = '<div class="p-2">';
+                    let catCheckboxes = '<div class="p-2 space-y-1">'; 
                     availableCategories.forEach(cat => {
                         const checked = currentCats.includes(cat) ? 'checked' : '';
-                        catCheckboxes += `<label class="flex items-center gap-2 text-xs text-white p-2 hover:bg-white/10 rounded cursor-pointer select-none"><input type="checkbox" value="${cat}" ${checked} onchange="toggleCategory(${idx}, '${cat}')"> ${cat}</label>`;
+                        catCheckboxes += `<label class="flex items-center gap-3 text-xs text-white p-2 hover:bg-white/10 rounded cursor-pointer select-none transition-colors"><input type="checkbox" value="${cat}" ${checked} onchange="toggleCategory(${idx}, '${cat}')" class="accent-[var(--neon-color)]"> ${cat}</label>`;
                     });
                     catCheckboxes += '</div>';
                     
@@ -2145,7 +2153,7 @@
                                 <span>Выбрано: ${currentCats.length}</span>
                                 <span class="text-xs">▼</span>
                             </button>
-                            <div id="cat-drop-${idx}" class="hidden absolute left-0 right-0 mt-2 p-4 z-50 overflow-y-auto max-h-[300px] border border-white/10 shadow-2xl" style="border-radius: 20px; background: rgba(25, 25, 35, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);">
+                            <div id="cat-drop-${idx}" class="hidden absolute left-0 right-0 mt-1 p-2 z-50 overflow-y-auto max-h-[300px]" style="background-color: rgba(0, 0, 0, 0.9) !important; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 10px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
                                 ${catCheckboxes}
                             </div>
                         </div>
