@@ -270,19 +270,18 @@
 .icon-picker-btn {
     aspect-ratio: 1;
     background: rgba(255,255,255,0.05); 
-    border: 1px solid rgba(255,255,255,0.1); 
+    border: 2px solid transparent; 
     border-radius: 8px;
     
     /* Центровка */
     display: flex; 
     align-items: center; 
     justify-content: center; 
-    padding: 0;
-    margin: 0;
-    
     transition: all 0.2s;
     position: relative; 
     overflow: hidden;
+    padding: 0;
+    margin: 0;
 }
         .icon-picker-btn.active { 
             border-color: var(--neon-color); 
@@ -398,13 +397,13 @@
     scrollbar-width: none;
     
     /* Делаем скролл от края до края экрана */
-    margin-left: -20px; 
-    margin-right: -20px;
+    margin-left: 0; 
+    margin-right: 0 !important;
     width: calc(100% + 40px);
     
     /* Внутренний отступ, чтобы кнопка "Все" стояла ровно по линии контента */
-    padding-left: 75px;
-    padding-right: 75px;
+    padding-left: 30px;
+    padding-right: 30px;
     
     -webkit-overflow-scrolling: touch;
 }
