@@ -24,13 +24,19 @@
             --neon-yellow: #ffea00;
         }
 
+        /* TASK 4: SYSTEM GESTURES ADAPTATION */
         html, body {
-            overscroll-behavior: none !important;
-            touch-action: pan-y !important;
             position: fixed;
             width: 100%;
             height: 100%;
             overflow: hidden;
+        }
+
+        @media (max-width: 768px) {
+            html, body {
+                overscroll-behavior: none !important;
+                touch-action: pan-y !important;
+            }
         }
 
         body {
@@ -133,13 +139,11 @@
         .page {
             position: absolute;
             top: 0;
-            /* Изменено для корректного центрирования с transform */
             left: 50%;
             transform: translateX(-50%);
             width: 100%;
             height: 100%;
             max-width: 600px;
-            /* margin: 0 auto; Удалено, так как используется left: 50% + transform */
             transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s ease;
             overflow-y: auto;
             overscroll-behavior: none;
@@ -149,12 +153,16 @@
             flex-direction: column;
             will-change: transform, opacity;
             content-visibility: auto;
-            touch-action: pan-y; 
+            touch-action: pan-y;
+            
+            /* TASK 2: DESKTOP STYLING */
+            box-shadow: 0 0 40px rgba(0,0,0,0.6);
+            border-left: 1px solid rgba(255,255,255,0.1);
+            border-right: 1px solid rgba(255,255,255,0.1);
         }
 
         .page::-webkit-scrollbar { width: 0px; }
 
-        /* Адаптированные трансформации с учетом базового сдвига -50% */
         .hidden-left { transform: translateX(-150%); opacity: 0; pointer-events: none; }
         .hidden-right { transform: translateX(50%); opacity: 0; pointer-events: none; }
         .hidden-bottom { transform: translateY(100%); opacity: 0; pointer-events: none; }
@@ -268,7 +276,7 @@
             display: flex; align-items: center; justify-content: center; gap: 8px;
         }
 
-        /* TASK 3: GLOW */
+        /* TASK 3: GLOW & BUTTON FIXES */
         .btn-save-cyber {
             background: rgba(6, 182, 212, 0.2);
             backdrop-filter: blur(12px);
@@ -291,6 +299,11 @@
             border-color: rgba(255, 255, 255, 0.2);
             transform: scale(0.98);
             box-shadow: none;
+        }
+
+        /* TASK 3: SPECIAL RULE FOR REVIEW CARD BUTTONS */
+        .review-card .btn-save-cyber { 
+            margin-top: 12px !important; 
         }
 
         .btn-edit-list {
@@ -351,8 +364,23 @@
 
         .title-gradient { background: linear-gradient(135deg, #ffffff 0%, #a1a1a1 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
-        .category-scroll-container { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; scrollbar-width: none; }
+        /* TASK 1: CATEGORY SCROLL FIXES */
+        .category-scroll-container { 
+            display: flex; 
+            gap: 8px; 
+            overflow-x: auto; 
+            padding-bottom: 8px; 
+            margin-bottom: 12px; 
+            scrollbar-width: none;
+            /* Added fixes */
+            margin-left: -20px;
+            margin-right: -20px;
+            padding-left: 20px;
+            padding-right: 20px;
+            -webkit-overflow-scrolling: touch;
+        }
         .category-scroll-container::-webkit-scrollbar { display: none; }
+        
         .category-chip {
             white-space: nowrap; padding: 6px 16px; border-radius: 999px; font-size: 12px; font-weight: 600;
             cursor: pointer; transition: all 0.2s; border: 1px solid rgba(255,255,255,0.1);
