@@ -1839,7 +1839,14 @@
             const list = tempAppData.mainMenu;
             const newIndex = index + direction;
             if (newIndex >= 0 && newIndex < list.length) {
-                [list[index], list[newIndex]] = [list[newIndex], list[index]];
+                // EXPLICIT SWAP
+                const temp = list[index];
+                list[index] = list[newIndex];
+                list[newIndex] = temp;
+                
+                // Update order index immediately
+                list.forEach((btn, i) => btn.orderIndex = i);
+                
                 renderAdminMainMenu();
             }
         }
@@ -2255,10 +2262,33 @@
             const list = tempAppData.mainMenu[currentEditingIndex].items;
             const newIndex = index + direction;
             if (newIndex >= 0 && newIndex < list.length) {
-                [list[index], list[newIndex]] = [list[newIndex], list[index]];
-                // FIX: Update order property immediately in memory
-                list.forEach((item, i) => item.order = i);
+                // EXPLICIT SWAP
+                const temp = list[index];
+                list[index] = list[newIndex];
+                list[newIndex] = temp;
+                
+                // Update order property immediately
+                list.forEach((item, i) => {
+                    if (item) item.order = i;
+                });
+                
                 renderSubListItems();
+            }
+        }
+
+        function moveMainMenuButton(index, direction) {
+            const list = tempAppData.mainMenu;
+            const newIndex = index + direction;
+            if (newIndex >= 0 && newIndex < list.length) {
+                // EXPLICIT SWAP
+                const temp = list[index];
+                list[index] = list[newIndex];
+                list[newIndex] = temp;
+                
+                // Update order index
+                list.forEach((btn, i) => btn.orderIndex = i);
+                
+                renderAdminMainMenu();
             }
         }
 
