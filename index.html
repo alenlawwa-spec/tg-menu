@@ -1909,7 +1909,8 @@
                     let snap;
                     // Modified Logic Here
                     if (colName === 'services') {
-                         snap = await db.collection(colName)
+                         // TASK 1: GLOBAL FIX - LOAD ALL SERVICES
+                         snap = await db.collection('services')
                             .orderBy('createdAt', 'desc')
                             .limit(100)
                             .get();
@@ -2153,7 +2154,7 @@
                                 <span>Выбрано: ${currentCats.length}</span>
                                 <span class="text-xs">▼</span>
                             </button>
-                            <div id="cat-drop-${idx}" class="hidden absolute left-0 right-0 mt-1 p-2 z-50 overflow-y-auto max-h-[300px]" style="background-color: rgba(0, 0, 0, 0.9) !important; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 10px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
+                            <div id="cat-drop-${idx}" class="hidden absolute left-0 right-0 mt-1 p-2 z-50 overflow-y-auto max-h-[300px]" style="background: rgba(0, 0, 0, 0.95) !important; border: 1px solid rgba(255, 255, 255, 0.15) !important; border-radius: 10px !important; backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); box-shadow: 0 10px 30px rgba(0,0,0,0.8);">
                                 ${catCheckboxes}
                             </div>
                         </div>
